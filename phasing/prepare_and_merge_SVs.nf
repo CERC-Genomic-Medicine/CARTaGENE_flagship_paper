@@ -42,7 +42,7 @@ process handle_duplicates_SVs {
     publishDir "handle_dp_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
 
     """
-    handle_dp.py -i $sv_vcf -o ${sv_vcf.getBaseName()}.handle_dp.vcf.gz
+    handle_dp_SVs.py -i $sv_vcf -o ${sv_vcf.getBaseName()}.handle_dp.vcf.gz
     bcftools view ${sv_vcf.getBaseName()}.handle_dp.vcf.gz -Oz -o ${sv_vcf.getBaseName()}.handle_dup.vcf.gz
     bcftools index --tbi ${sv_vcf.getBaseName()}.handle_dup.vcf.gz
     """
