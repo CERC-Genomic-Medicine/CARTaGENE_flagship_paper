@@ -228,7 +228,7 @@ process minimac_imputation{
     bcftools view -r \${chrom}:\${start_bp}-\${stop_bp} ${study_vcf} -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz 
     bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz
 
-    ${params.minimac4} --refHaps $ref_vcf --haps study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz  --chr \${chrom} --start \${start_bp} --end \${stop_bp} --minRatio 0.00001 --prefix study.\${chrom}_\${start_bp}_\${stop_bp} --cpus 4  --meta --ignoreDuplicates
+    ${params.minimac4} --refHaps $ref_vcf --rsid --haps study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz  --chr \${chrom} --start \${start_bp} --end \${stop_bp} --minRatio 0.00001 --prefix study.\${chrom}_\${start_bp}_\${stop_bp} --cpus 4  --meta --ignoreDuplicates
 
     echo "chrX" > chroms1.txt
     echo "X" > chroms2.txt
