@@ -106,7 +106,7 @@ process concat_vcfs {
     """
 }
 workflow {
-        snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
+        //snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
         sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
 
         //setGT_snv_ch = setGT_non_PASS_GT_SNVs(snv_ch)
@@ -119,10 +119,10 @@ workflow {
         filled_ref_ch = fill_REF_SVs(sv_ch)
         handle_dp_ch = handle_duplicates_SVs(filled_ref_ch)
 
-        snv_with_chr_name_ch = get_chr_name_SNVs(snv_ch)
-        sv_with_chr_name_ch = get_chr_name_SVs(handle_dp_ch)
-        stat_phasing_ch = snv_with_chr_name_ch.join(sv_rename_ch)
-        stat_phasing_ch_combine = concat_vcfs(stat_phasing_ch)
+        //snv_with_chr_name_ch = get_chr_name_SNVs(snv_ch)
+        //sv_with_chr_name_ch = get_chr_name_SVs(handle_dp_ch)
+        //stat_phasing_ch = snv_with_chr_name_ch.join(sv_rename_ch)
+        //stat_phasing_ch_combine = concat_vcfs(stat_phasing_ch)
 
         //phased_vcfs = beagle_statistical_phasing(stat_phasing_ch_combine)
         //recal_phased = recalculate_AF_phased(phased_vcfs)
