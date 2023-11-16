@@ -45,12 +45,12 @@ process clean_VCF {
     # b. change `.` to `./.` in autosomal chromosomes (`.` is an artifact from variant calling pipeline). When no options are given to bcftools fixploidy, then all samples are treated as females and, thus, all samples will be set to diploids on chromosome X.
     # c. remove all INFO and FORMAT fields which will be not needed in downstream analyses
     # d. recalculate allele counts after setting some GT fields to mssing
-    # e. remove any monomorphic variants which were introduced in previous steps
+    # e. remove any monomorphic variants which were introduced in previous steps or variants with missingness >0.1
     # f. left-align indels
     # g. remove any duplicated records after left-alignment (see vt documentation)
     # h. update ID field to reflect new reference and alternate alleles after left-alignment
     
-    bcftools +setGT -Ou ${vcf}  -- -t q -n . -i 'FT!="PASS"' | bcftools +fixploidy -Ou | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS | bcftools view -c 1 -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o ${vcf.getSimpleName()}.norm.dedup.vcf.gz
+    bcftools +setGT -Ou ${vcf}  -- -t q -n . -i 'FT!="PASS"' | bcftools +fixploidy -Ou | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS,F_MISSING | bcftools view -e 'F_MISSING>0.1 || AC < 1' -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o ${vcf.getSimpleName()}.norm.dedup.vcf.gz
     bcftools tabix --tbi ${vcf.getSimpleName()}.norm.dedup.vcf.gz
     """
 }
