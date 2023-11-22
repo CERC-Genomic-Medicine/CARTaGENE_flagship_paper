@@ -44,7 +44,7 @@ process clean_VCF {
     # a. set GT to missing if it didn't pass QC
     # b. change `.` to `./.` in autosomal chromosomes (`.` is an artifact from variant calling pipeline). When no options are given to bcftools fixploidy, then all samples are treated as females and, thus, all samples will be set to diploids on chromosome X.
     # c. remove all INFO and FORMAT fields which will be not needed in downstream analyses
-    # d. recalculate allele counts after setting some GT fields to mssing
+    # d. recalculate allele counts after setting some GT fields to missing
     # e. remove any monomorphic variants which were introduced in previous steps or variants with missingness >0.1
     # f. left-align indels
     # g. remove any duplicated records after left-alignment (see vt documentation)
