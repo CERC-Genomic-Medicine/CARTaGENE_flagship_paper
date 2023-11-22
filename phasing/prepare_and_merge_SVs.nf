@@ -25,29 +25,6 @@ process fill_REF_SVs {
     bcftools tabix --tbi ${sv_vcf.getBaseName()}.filled_REF.vcf.gz
     """
 }
-process handle_duplicates_SVs {
-    //errorStrategy 'retry'
-    //maxRetries 3
-    cache "lenient"
-    cpus 1
-    memory "16GB"
-    time "1h"
-    input:
-    tuple path(sv_vcf), path(sv_index)
-    
-    output:
-    tuple path("*.handle_dup.vcf.gz"), path("*.handle_dup.vcf.gz.tbi")
-    
-    publishDir "handle_dp_vcfs/", pattern: "*.vcf.gz", mode: "copy"   
-    publishDir "handle_dp_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
-
-    """
-    handle_dp_SVs.py -i $sv_vcf -o ${sv_vcf.getBaseName()}.handle_dp.vcf.gz
-    bcftools view ${sv_vcf.getBaseName()}.handle_dp.vcf.gz -Oz -o ${sv_vcf.getBaseName()}.handle_dup.vcf.gz
-    bcftools index --tbi ${sv_vcf.getBaseName()}.handle_dup.vcf.gz
-    """
-}
-
 process get_chr_name_SNVs {
     //errorStrategy 'retry'
     //maxRetries 3
@@ -117,7 +94,7 @@ workflow {
         //prep_sv_ch = prep_SVs(sv_ch)
         //recalculated_sv_ch = recalculate_AF_SVs(prep_sv_ch)
         filled_ref_ch = fill_REF_SVs(sv_ch)
-        handle_dp_ch = handle_duplicates_SVs(filled_ref_ch)
+        //handle_dp_ch = handle_duplicates_SVs(filled_ref_ch)
 
         //snv_with_chr_name_ch = get_chr_name_SNVs(snv_ch)
         //sv_with_chr_name_ch = get_chr_name_SVs(handle_dp_ch)
