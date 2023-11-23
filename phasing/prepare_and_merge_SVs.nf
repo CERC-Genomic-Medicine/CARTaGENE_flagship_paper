@@ -1,131 +1,115 @@
 #!/usr/bin/env nextflow
 /*
-* AUTHOR: Mohadese Sayahian Dehkordi, <mohadese.sayahiandehkordi@mail.mcgill.ca>, Rose Laflamme, <rose.laflamme@umontreal.ca>
-* VERSION: 1.0
+* AUTHOR: Mohadese Sayahian Dehkordi <mohadese.sayahiandehkordi@mail.mcgill.ca>, Rose Laflamme <rose.laflamme@umontreal.ca>, Daniel Taliun <daniel.taliun@mcgill.ca>
+* VERSION: 2.0
 * YEAR: 2023
 */
-process fill_REF_SVs {
-    //errorStrategy 'retry'
-    //maxRetries 3
+
+// This pipeline merges together VCFs with SNVs and VCFs with SVs.
+// Pre-requisites/assumptions:
+// 1) Script was designed for autosomal chromosomes, since at the time there were no SVs data available for chromosome X.
+// 2) Only samples that are present in both VCFs will be kept.
+// 3) Input VCFs must be split by chromosome and indexed.
+// 4) Uses bcftools
+
+// How to run:
+// run prepare_and_merge_SVs.nf --snv_vcf_path="/path/to/snv/*.vcf.gz" --sv_vcf_path="/path/to/sv/*.vcf.gz" --ref /path/to/Homo_sapiens.GRCh38.fa
+
+params.snv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+params.sv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
+
+
+process clean_SV_VCF {
     cache "lenient"
+    
+    executor "slurm"
+    clusterOptions "--account=rrg-vmooser"
+
     cpus 1
-    memory "16GB"
+    memory "8GB"
     time "1h"
+    scratch '$SLURM_TMPDIR'
+
     input:
     tuple path(sv_vcf), path(sv_index)
     
     output:
-    tuple path("*.filled_REF.vcf.gz"), path("*.filled_REF.vcf.gz.tbi")
+    tuple stdout, path("*.SVs.cleaned.vcf.gz"), path("*.SVs.cleaned.vcf.gz.tbi")
     
-    publishDir "Filled_REF_SV_vcfs/", pattern: "*.vcf.gz", mode: "copy"   
-    publishDir "Filled_REF_SV_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
-
     """
-    bcftools +fill-from-fasta $sv_vcf -Oz -o ${sv_vcf.getBaseName()}.filled_REF.vcf.gz -- -c REF -f ${params.ref} 
-    bcftools tabix --tbi ${sv_vcf.getBaseName()}.filled_REF.vcf.gz
+    # Get the chromosome name for this VCF/BCF
+    chr=`bcftools index -s ${sv_vcf} | cut -f1`
+    
+    # a) Compute missigness for each variant
+    # b) Remove variants with missigness >0.1
+    # c) Fill the missing REF alleles with the allele from the reference genome (upstream SV calling tools set all REF alleles to `.` which is not in line with the VCF specs)
+    bcftools +fill-tags ${sv_vcf} -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fill-from-fasta -Oz -o \${chr}.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
+    bcftools index -t \${chr}.SVs.cleaned.vcf.gz
+    echo -n "\${chr}"
     """
 }
 
-process filter_missingness {
-    //errorStrategy 'retry'
-    //maxRetries 3
-    cache "lenient"
-    cpus 1
-    memory "16GB"
-    time "1h"
-    input:
-    tuple path(sv_vcf), path(sv_index)
-    
-    output:
-    tuple path("*.filtered_missingness.vcf.gz"), path("*.filtered_missingness.vcf.gz.tbi")
-    
-    publishDir "Filtered_missingness_SV_vcfs/", pattern: "*.vcf.gz", mode: "copy"   
-    publishDir "Filtered_missingness_SV_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
 
-    """
-    bcftools +fill-tags $sv_vcf -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Oz -o ${sv_vcf.getBaseName()}.filtered_missingness.vcf.gz
-    bcftools tabix --tbi ${sv_vcf.getBaseName()}.filtered_missingness.vcf.gz
-    """
-}
-process get_chr_name_SNVs {
-    //errorStrategy 'retry'
-    //maxRetries 3
+process get_chr_name {
     cache "lenient"
+
     cpus 1
-    memory "4GB"
-    time "1h"
+    memory "2GB"
+    time "10m"
+    
     input:
-    tuple path(snv_vcf), path(snv_index)
+    tuple path(vcf), path(vcf_index)
 
     output:
-    tuple stdout, path(snv_vcf), path(snv_index)
+    tuple stdout, path(vcf), path(vcf_index)
 
     """
-    tabix -l ${snv_vcf} 
+    echo -n `bcftools index -s ${vcf} | cut -f1`
     """
 }
 
-process get_chr_name_SVs {
-    //errorStrategy 'retry'
-    //maxRetries 3
+
+process concat_VCF {
     cache "lenient"
+  
+    executor "slurm"
+    clusterOptions "--account=rrg-vmooser"
+
     cpus 1
-    memory "4GB"
-    time "1h"
-    input:
-    tuple path(sv_vcf), path(sv_index)
+    memory "8GB"
+    time "2h"
+    scratch '$SLURM_TMPDIR'
 
-    output:
-    tuple stdout, path(sv_vcf), path(sv_index)
-
-    """
-    tabix -l ${sv_vcf} 
-    """
-
-}
-process concat_vcfs {
-    //errorStrategy 'retry'
-    //maxRetries 3
-    cache "lenient"
-    cpus 1
-    memory "64GB"
-    time "8h"
     input:
     tuple val(chr_name), path(snv_vcf), path(snv_index), path(sv_vcf), path(sv_index)
 
     output:
-    tuple path("*.combined.vcf.gz"), path("*.combined.vcf.gz.tbi")
+    path("*.SNVs_Indels_SVs.vcf.gz*")
 
-    publishDir "combined_vcfs/", pattern: "*.vcf.gz", mode: "copy"   
-    publishDir "combined_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
+    publishDir "combined_vcfs/", pattern: "*.SNVs_Indels_SVs.vcf.gz*", mode: "copy"
 
     """
-    bcftools concat $snv_vcf $sv_vcf | bcftools sort -m 64G -Oz -o ${snv_vcf.getSimpleName()}.combined.vcf.gz
-    bcftools index --tbi ${snv_vcf.getSimpleName()}.combined.vcf.gz
+    # First, we need to make sure that the sample names and samples' order in both files match, otherwise the bcftools concat will fail
+    bcftools query -l ${snv_vcf} | sort > samples1.txt
+    bcftools query -l ${sv_vcf} | sort > samples2.txt
+    comm --check-order -12 samples1.txt samples2.txt > samples_union.txt
+    
+    # Then, subset and re-order samples in both files
+    bcftools view -S samples_union.txt ${snv_vcf} -Ob -o temp1.bcf
+    bcftools index temp1.bcf
+    bcftools view -S samples_union.txt ${sv_vcf} -Ob -o temp2.bcf
+    bcftools index temp2.bcf
+
+    # Now, we can concatenate files. The --allow-overlaps option will ensure that the resulting concatenated VCF is sorted by position.
+    bcftools concat --allow-overlaps temp1.bcf temp2.bcf -Oz -o ${chr_name}.SNVs_Indels_SVs.vcf.gz
+    bcftools index --tbi ${chr_name}.SNVs_Indels_SVs.vcf.gz
     """
 }
+
+
 workflow {
-        //snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
-        sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
-
-        //setGT_snv_ch = setGT_non_PASS_GT_SNVs(snv_ch)
-        //recalculated_ch = recalculate_AF_SNVs(setGT_snv_ch)
-        //left_aligned_ch = left_align_SNVs(recalculated_ch)
-        //rm_dup_ch = remove_duplicates_SNVs(left_aligned_ch)
-        //prep_snv_ch = filter_based_on_AC_SNVs(rm_dup_ch)
-        //prep_sv_ch = prep_SVs(sv_ch)
-        //recalculated_sv_ch = recalculate_AF_SVs(prep_sv_ch)
-        filled_ref_ch = fill_REF_SVs(sv_ch)
-        filter_missingness(filled_ref_ch)
-        //handle_dp_ch = handle_duplicates_SVs(filled_ref_ch)
-
-        //snv_with_chr_name_ch = get_chr_name_SNVs(snv_ch)
-        //sv_with_chr_name_ch = get_chr_name_SVs(handle_dp_ch)
-        //stat_phasing_ch = snv_with_chr_name_ch.join(sv_rename_ch)
-        //stat_phasing_ch_combine = concat_vcfs(stat_phasing_ch)
-
-        //phased_vcfs = beagle_statistical_phasing(stat_phasing_ch_combine)
-        //recal_phased = recalculate_AF_phased(phased_vcfs)
-
-        //remove_singletons(recal_phased)
+    snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
+    sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
+    concat_VCF(get_chr_name(snv_ch).combine(clean_SV_VCF(sv_ch), by: 0))
 }
