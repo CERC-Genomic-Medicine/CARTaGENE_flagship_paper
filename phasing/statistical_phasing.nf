@@ -8,52 +8,44 @@
 // How to run:
 // nextflow run statistical_phasing.nf --vcf_path /path/to/chr2.vcf.gz --eagle /path/to//Eagle_v2.4.1/eagle --genetic_map /path/to/genetic_map_hg38_withX.txt.gz -with-report report.html
 
-params.vcf_path = "/path/to/data/*.bcf" // Absolute path to the Input VCF/BCF files split by chromosome
-params.eagle = "/path/to/executable/eagle" // Absolute path to the Eagle executable
-params.genetic_map = "/path/to/genetic_map/genetic_map_hg38_withX.txt.gz" // Absolute path to the genetic map from Eagle software
+//params.vcf_path = "/path/to/data/*.bcf" // Absolute path to the Input VCF/BCF files split by chromosome
+//params.eagle = "/path/to/executable/eagle" // Absolute path to the Eagle executable
+//params.genetic_map = "/path/to/genetic_map/genetic_map_hg38_withX.txt.gz" // Absolute path to the genetic map from Eagle software
 
-process eagle_statistical_phasing {
-    errorStrategy 'retry'
-    maxRetries 3
-    cache 'lenient'
-
-    executor 'slurm'
-    clusterOptions '--account=rrg-vmooser'
-
-    cpus 4
-    memory "16GB"
-    time "6h"
-    scratch '$SLURM_TMPDIR'
-
+process get_chr_name {
+    //errorStrategy 'retry'
+    //maxRetries 3
+    cache "lenient"
+    cpus 1
+    memory "4GB"
+    time "00:15:00"
     input:
-    path vcf
+    tuple path(snv_vcf), path(snv_index)
 
     output:
-    path("*eagle_phased*")
-
-    publishDir "phased/", pattern: "*eagle_phased*", mode: "copy"
+    tuple stdout, path(snv_vcf), path(snv_index)
 
     """
-    ${params.eagle} --numThreads 4 --geneticMapFile ${params.genetic_map} --vcf ${vcf} --vcfOutFormat z --outPrefix ${vcf.getBaseName()}.eagle_phased
+    chrom=`bcftools index -s ${snv_vcf} | cut -f1`
+	printf "\${chrom}"
     """
 }
 
-
 process beagle_statistical_phasing {
-    errorStrategy 'retry'
-    maxRetries 3
+    //errorStrategy 'retry'
+    //maxRetries 3
     cache "lenient"
     
-    executor 'slurm'
-    clusterOptions '--account=rrg-vmooser'
+    //executor 'slurm'
+    //clusterOptions '--account=rrg-vmooser'
 
     cpus 8
     memory "32GB"
     time "10h"
-    scratch "$SLURM_TMPDIR"
+    //scratch "$SLURM_TMPDIR"
 
     input:
-    path vcf
+    tuple val(chromosome), path(vcf), path(vcf_index), path(genetic_map)
     
     output:
     path("*beagle_phased*")
@@ -61,7 +53,7 @@ process beagle_statistical_phasing {
     publishDir "phased/", pattern: "*beagle_phased*", mode: "copy"
     
     """
-    java -jar -Xmx32g ${params.beagle} window=25.0 overlap=2.5 nthreads=8 gt=${vcf} out=${vcf.getBaseName()}.beagle_phased
+    java -jar -Xmx32g ${params.beagle} window=25.0 overlap=2.5 nthreads=8 gt=${vcf} map=${genetic_map} out=${vcf.getBaseName()}.beagle_phased
     """
 }
 
@@ -109,29 +101,9 @@ process remove_singletons {
 
 
 workflow {
-
-	eagle_statistical_phasing(Channel.fromPath(params.vcf_path))
-	beagle_statistical_phasing(Channel.fromPath(params.vcf_path))
-
-        //concat_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
-        //sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
-
-        //setGT_snv_ch = setGT_non_PASS_GT_SNVs(snv_ch)
-        //recalculated_ch = recalculate_AF_SNVs(setGT_snv_ch)
-        //left_aligned_ch = left_align_SNVs(recalculated_ch)
-        //rm_dup_ch = remove_duplicates_SNVs(left_aligned_ch)
-        //prep_snv_ch = filter_based_on_AC_SNVs(rm_dup_ch)
-        //prep_sv_ch = prep_SVs(sv_ch)
-        //filled_ref_ch = fill_REF_SVs(prep_sv_ch)
-
-        //snv_with_chr_name_ch = get_chr_name_SNVs(snv_ch)
-        //sv_with_chr_name_ch = get_chr_name_SVs(filled_ref_ch)
-
-        //stat_phasing_ch = snv_with_chr_name_ch.join(sv_with_chr_name_ch)
-        //stat_phasing_ch_combine = concat_vcfs(stat_phasing_ch)
-
-        //phased_vcfs = beagle_statistical_phasing(concat_ch)
-        //recal_phased = recalculate_AF_phased(phased_vcfs)
-
-        //remove_singletons(recal_phased)
+    genetic_map_ch = Channel.fromPath(params.genetic_map_path).map { file -> [ file.name.toString().tokenize('_').get(1), file] }
+    vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [ vcf, vcf + ".tbi" ] }
+    vcf_with_chr_name = get_chr_name(vcf_ch)
+    stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
+	beagle_statistical_phasing(stat_phasing_ch)
 }
