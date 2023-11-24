@@ -11,7 +11,7 @@
 // 1. Only one autosomal chromosome (sex chromosomes were not tested) is used to perform the benchmarking.
 
 // How to run:
-// nextflow run statistical_phasing.nf --vcf_path /path/to/chr2.vcf.gz --eagle /path/to/Eagle_v2.4.1/eagle --eagle_genetic_map /path/to/genetic_map_hg38_withX.txt.gz --beagle /path/to/beagle.jar --beagle_genetic_map /path/to/plink.chr2.GRCh38.map --shapeit5_common /path/to/phase_common_static --shapeit5_rare /path/tophase_rare_static --shapeit5_genetic_map /path/to/chr2.b38.gmap.gz --shapeit5_chunks /path/to/chunks/b38/4cM/chunks_chr2.txt --shapeit5_switch /path/to/executable/switch_static -with-report report.html
+// nextflow run benchmark_phasing.nf --vcf_path /path/to/chr2.vcf.gz --eagle /path/to/Eagle_v2.4.1/eagle --eagle_genetic_map /path/to/genetic_map_hg38_withX.txt.gz --beagle /path/to/beagle.jar --beagle_genetic_map /path/to/plink.chr2.GRCh38.map --shapeit5_common /path/to/phase_common_static --shapeit5_rare /path/tophase_rare_static --shapeit5_genetic_map /path/to/chr2.b38.gmap.gz --shapeit5_chunks /path/to/chunks/b38/4cM/chunks_chr2.txt --shapeit5_switch /path/to/executable/switch_static -with-report report.html
 
 params.vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF file with the chromosome of choice for the benchmarking
 
