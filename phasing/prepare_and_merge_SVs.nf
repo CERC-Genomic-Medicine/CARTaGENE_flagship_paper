@@ -8,9 +8,10 @@
 // This pipeline merges together VCFs with SNVs and VCFs with SVs.
 // Pre-requisites/assumptions:
 // 1) Script was designed for autosomal chromosomes, since at the time there were no SVs data available for chromosome X.
-// 2) Only samples that are present in both VCFs will be kept.
-// 3) Input VCFs must be split by chromosome and indexed.
-// 4) Uses bcftools
+// 2) The SNV file names are prefixed with "chr", e.g. chr1.snvs.vcf.gz, chr2.snvs.vcf.gz, ... .  
+// 3) Only samples that are present in both VCFs will be kept.
+// 4) Input VCFs must be split by chromosome and indexed.
+// 5) Uses bcftools
 
 // How to run:
 // nextflow run prepare_and_merge_SVs.nf --snv_vcf_path="/path/to/snv/*.vcf.gz" --sv_vcf_path="/path/to/sv/*.vcf.gz" --ref /path/to/Homo_sapiens.GRCh38.fa
@@ -47,25 +48,6 @@ process clean_SV_VCF {
     bcftools +fill-tags ${sv_vcf} -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fill-from-fasta -Oz -o \${chr}.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
     bcftools index -t \${chr}.SVs.cleaned.vcf.gz
     echo -n "\${chr}"
-    """
-}
-
-
-process get_chr_name {
-    cache "lenient"
-
-    cpus 1
-    memory "2GB"
-    time "10m"
-    
-    input:
-    tuple path(vcf), path(vcf_index)
-
-    output:
-    tuple stdout, path(vcf), path(vcf_index)
-
-    """
-    echo -n `bcftools index -s ${vcf} | cut -f1`
     """
 }
 
@@ -109,7 +91,7 @@ process concat_VCF {
 
 
 workflow {
-    snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
+    snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
     sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
-    concat_VCF(get_chr_name(snv_ch).combine(clean_SV_VCF(sv_ch), by: 0))
+    concat_VCF(snv_ch.combine(clean_SV_VCF(sv_ch), by: 0))
 }
