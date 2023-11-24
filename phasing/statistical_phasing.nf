@@ -53,7 +53,13 @@ process beagle_statistical_phasing {
     publishDir "phased/", pattern: "*beagle_phased*", mode: "copy"
     
     """
+    # we need to modify the header after phasing since the beagle tool removes the original header
+    bcftools view -h ${vcf} > original_header.txt
+    head -n -1 original_header.txt > original_header_without_sample_names.txt
     java -jar -Xmx32g ${params.beagle} window=25.0 overlap=2.5 nthreads=8 gt=${vcf} map=${genetic_map} out=${vcf.getBaseName()}.beagle_phased
+    bcftools view -h ${vcf.getBaseName()}.beagle_phased.vcf.gz > new_header.txt
+    cat original_header_without_sample_names.txt new_header.txt > combined_header.txt
+    bcftools reheader -h combined_header.txt -o ${vcf.getBaseName()}.beagle_phased.reheader.vcf.gz ${vcf.getBaseName()}.beagle_phased.vcf.gz
     """
 }
 
