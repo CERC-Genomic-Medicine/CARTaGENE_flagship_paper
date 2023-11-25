@@ -48,7 +48,7 @@ process beagle_statistical_phasing {
     tuple val(chromosome), path(vcf), path(vcf_index), path(genetic_map)
     
     output:
-    path("*beagle_phased.reheader.vcf.gz"), path("*beagle_phased.reheader.vcf.gz.tbi")
+    tuple path("*beagle_phased.reheader.vcf.gz"), path("*beagle_phased.reheader.vcf.gz.tbi")
     
     publishDir "phased/", pattern: "*beagle_phased.reheader.vcf.gz*", mode: "copy"
     
@@ -110,5 +110,7 @@ workflow {
     vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [ vcf, vcf + ".tbi" ] }
     vcf_with_chr_name = get_chr_name(vcf_ch)
     stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
-	beagle_statistical_phasing(stat_phasing_ch)
+	phased_ch = beagle_statistical_phasing(stat_phasing_ch)
+    recalculated_AF_ch = recalculate_AF_phased(phased_ch)
+    remove_singletons(recalculated_AF_ch)
 }
