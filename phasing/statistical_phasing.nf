@@ -89,7 +89,7 @@ process remove_singletons {
 workflow {
     genetic_map_ch = Channel.fromPath(params.genetic_map_path).map { file -> [ file.name.toString().tokenize('_').get(1), file] }
     vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
-    stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
+    stat_phasing_ch = vcf_ch.join(genetic_map_ch)
 	phased_ch = beagle_statistical_phasing(stat_phasing_ch)
     recalculated_AF_ch = recalculate_AF_phased(phased_ch)
     remove_singletons(recalculated_AF_ch)
