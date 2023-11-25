@@ -12,25 +12,6 @@
 //params.eagle = "/path/to/executable/eagle" // Absolute path to the Eagle executable
 //params.genetic_map = "/path/to/genetic_map/genetic_map_hg38_withX.txt.gz" // Absolute path to the genetic map from Eagle software
 
-process get_chr_name {
-    //errorStrategy 'retry'
-    //maxRetries 3
-    cache "lenient"
-    cpus 1
-    memory "4GB"
-    time "00:15:00"
-    input:
-    tuple path(snv_vcf), path(snv_index)
-
-    output:
-    tuple stdout, path(snv_vcf), path(snv_index)
-
-    """
-    chrom=`bcftools index -s ${snv_vcf} | cut -f1`
-	printf "\${chrom}"
-    """
-}
-
 process beagle_statistical_phasing {
     //errorStrategy 'retry'
     //maxRetries 3
@@ -107,12 +88,9 @@ process remove_singletons {
 
 workflow {
     genetic_map_ch = Channel.fromPath(params.genetic_map_path).map { file -> [ file.name.toString().tokenize('_').get(1), file] }
-    vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [ vcf, vcf + ".tbi" ] }
-    vcf_with_chr_name = get_chr_name(vcf_ch)
-    vcf_with_chr_name.view{"Result: ${it}"}
-    genetic_map_ch.view{"Result: ${it}"}
-    //stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
-	//phased_ch = beagle_statistical_phasing(stat_phasing_ch)
-    //recalculated_AF_ch = recalculate_AF_phased(phased_ch)
-    //remove_singletons(recalculated_AF_ch)
+    vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
+    stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
+	phased_ch = beagle_statistical_phasing(stat_phasing_ch)
+    recalculated_AF_ch = recalculate_AF_phased(phased_ch)
+    remove_singletons(recalculated_AF_ch)
 }
