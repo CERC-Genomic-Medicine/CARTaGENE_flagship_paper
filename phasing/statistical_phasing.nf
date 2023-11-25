@@ -48,9 +48,9 @@ process beagle_statistical_phasing {
     tuple val(chromosome), path(vcf), path(vcf_index), path(genetic_map)
     
     output:
-    path("*beagle_phased*")
+    tuple path("*beagle_phased.reheader.vcf.gz"), path("*beagle_phased.reheader.vcf.gz.tbi")
     
-    publishDir "phased/", pattern: "*beagle_phased*", mode: "copy"
+    publishDir "phased/", pattern: "*beagle_phased.reheader.vcf.gz*", mode: "copy"
     
     """
     # we need to modify the header after phasing since the beagle tool removes the original header
@@ -60,6 +60,7 @@ process beagle_statistical_phasing {
     bcftools view -h ${vcf.getBaseName()}.beagle_phased.vcf.gz > new_header.txt
     cat original_header_without_sample_names.txt new_header.txt > combined_header.txt
     bcftools reheader -h combined_header.txt -o ${vcf.getBaseName()}.beagle_phased.reheader.vcf.gz ${vcf.getBaseName()}.beagle_phased.vcf.gz
+    bcftools index --tbi ${vcf.getBaseName()}.beagle_phased.reheader.vcf.gz
     """
 }
 
@@ -71,17 +72,16 @@ process recalculate_AF_phased {
     memory "8GB"
     time "4h"
     input:
-    tuple path(snv_vcf), path(snv_index)
+    tuple path(vcf), path(vcf_index)
     
     output:
     tuple path("*.AF_calculated.vcf.gz"), path("*.AF_calculated.vcf.gz.tbi")
     
-    publishDir "phased/recalculated_AF_vcfs/", pattern: "*.vcf.gz", mode: "copy"   
-    publishDir "phased/recalculated_AF_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"    
+    publishDir "phased/recalculated_AF_vcfs/", pattern: "*.vcf.gz*", mode: "copy"   
 
     """
-    bcftools +fill-tags $snv_vcf -Oz -o ${snv_vcf.getSimpleName()}.AF_calculated.vcf.gz -- -t AN,AC,AF,NS
-    bcftools tabix --tbi ${snv_vcf.getSimpleName()}.AF_calculated.vcf.gz
+    bcftools +fill-tags $vcf -Oz -o ${vcf.getSimpleName()}.AF_calculated.vcf.gz -- -t AN,AC,AF,NS
+    bcftools tabix --tbi ${vcf.getSimpleName()}.AF_calculated.vcf.gz
     """
 }
 process remove_singletons {
@@ -90,17 +90,16 @@ process remove_singletons {
     memory "16GB"
     time "5h"
     input:
-    tuple path(chr), path(log)
+    tuple path(vcf), path(vcf_index)
     
     output:
     tuple path("*.vcf.gz"), path("*.vcf.gz.tbi")
     
-    publishDir "phased/ref_withoutsingletons_vcfs/", pattern: "*.vcf.gz", mode: "copy"
-    publishDir "phased/ref_withoutsingletons_vcfs/", pattern: "*.vcf.gz.tbi", mode: "copy"
+    publishDir "phased/ref_withoutsingletons_vcfs/", pattern: "*.vcf.gz*", mode: "copy"
 
     """
-    bcftools view $chr -c 2 -Oz -o  ${chr.getSimpleName()}.with_out_singletons.vcf.gz
-    bcftools index --tbi ${chr.getSimpleName()}.with_out_singletons.vcf.gz
+    bcftools view $vcf -c 2 -Oz -o  ${vcf.getSimpleName()}.with_out_singletons.vcf.gz
+    bcftools index --tbi ${vcf.getSimpleName()}.with_out_singletons.vcf.gz
     """
 }
 
@@ -111,5 +110,7 @@ workflow {
     vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [ vcf, vcf + ".tbi" ] }
     vcf_with_chr_name = get_chr_name(vcf_ch)
     stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
-	beagle_statistical_phasing(stat_phasing_ch)
+	phased_ch = beagle_statistical_phasing(stat_phasing_ch)
+    recalculated_AF_ch = recalculate_AF_phased(phased_ch)
+    remove_singletons(recalculated_AF_ch)
 }
