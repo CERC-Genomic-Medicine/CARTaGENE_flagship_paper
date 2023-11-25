@@ -112,14 +112,10 @@ process concat_VCF {
     """
 }
 
-
 workflow {
     snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
     sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
     cleaned_sv_ch = clean_SV_VCF(sv_ch)
-    sv_ch_with_X = cleaned_sv_ch.flatMap { vcfs, vcf_indices ->
-        vcfs.collect { vcf -> [vcf.getSimpleName(), vcf, vcf.toString() + ".tbi"] }
-        }
-    concat_VCF(snv_ch.combine(sv_ch_with_X, by: 0))
+    //concatenation to be done! the problem is sv_ch will return 3 vcfs for chrX and this should be aligned to the input SNVs.
+    //concat_VCF(snv_ch.combine(sv_ch_with_X, by: 0))
 }
-

@@ -109,8 +109,10 @@ workflow {
     genetic_map_ch = Channel.fromPath(params.genetic_map_path).map { file -> [ file.name.toString().tokenize('_').get(1), file] }
     vcf_ch = Channel.fromPath(params.vcf_path).map{ vcf -> [ vcf, vcf + ".tbi" ] }
     vcf_with_chr_name = get_chr_name(vcf_ch)
-    stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
-	phased_ch = beagle_statistical_phasing(stat_phasing_ch)
-    recalculated_AF_ch = recalculate_AF_phased(phased_ch)
-    remove_singletons(recalculated_AF_ch)
+    vcf_with_chr_name.view{"Result: ${it}"}
+    genetic_map_ch.view{"Result: ${it}"}
+    //stat_phasing_ch = vcf_with_chr_name.join(genetic_map_ch)
+	//phased_ch = beagle_statistical_phasing(stat_phasing_ch)
+    //recalculated_AF_ch = recalculate_AF_phased(phased_ch)
+    //remove_singletons(recalculated_AF_ch)
 }
