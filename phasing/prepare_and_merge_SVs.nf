@@ -36,7 +36,7 @@ process clean_SV_VCF {
     tuple path(sv_vcf), path(sv_index)
     
     output:
-    tuple path("*.SVs.cleaned.vcf.gz"), path("*.SVs.cleaned.vcf.gz.tbi")
+    tuple stdout, path("*.SVs.cleaned.vcf.gz"), path("*.SVs.cleaned.vcf.gz.tbi")
     
     publishDir "SV_vcfs/", pattern: "*.SVs.cleaned.vcf.gz*", mode: "copy"
     """
@@ -63,13 +63,14 @@ process clean_SV_VCF {
     # Now we can apply filters similar to the autosomal chromosomes
     bcftools +fill-tags temp.bcf -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_nonPAR.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
     bcftools index -t chrX_nonPAR.SVs.cleaned.vcf.gz
-
+    echo -n "\${chr}"
     else
     # a) Compute missigness for each variant
     # b) Remove variants with missigness >0.1
     # c) Fill the missing REF alleles with the allele from the reference genome (upstream SV calling tools set all REF alleles to `.` which is not in line with the VCF specs)
     bcftools +fill-tags ${sv_vcf} -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o \${chr}.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
     bcftools index -t \${chr}.SVs.cleaned.vcf.gz
+    echo -n "\${chr}"
     fi
     """
 }
@@ -116,6 +117,9 @@ workflow {
     snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
     sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
     cleaned_sv_ch = clean_SV_VCF(sv_ch)
+
+    chrX_vcfs = cleaned_sv_ch.filter { it[0].contains('chrX') }
+    autosomal_vcfs = cleaned_sv_ch.filter { !it[0].contains('chrX') }
     //concatenation to be done! the problem is sv_ch will return 3 vcfs for chrX and this should be aligned to the input SNVs.
     //concat_VCF(snv_ch.combine(sv_ch_with_X, by: 0))
 }
