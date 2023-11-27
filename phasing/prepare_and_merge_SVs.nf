@@ -16,65 +16,63 @@
 // How to run:
 // nextflow run prepare_and_merge_SVs.nf --snv_vcf_path="/path/to/snv/*.vcf.gz" --sv_vcf_path="/path/to/sv/*.vcf.gz" --ref /path/to/Homo_sapiens.GRCh38.fa
 
-params.snv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
-params.sv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
-params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
+//params.snv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+//params.sv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+//params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
 
 // PAR region coordinates for GRCh38. Change only when working with different human genome reference build.
-params.par1_region = "chrX:10001-2781479"
-params.par2_region = "chrX:155701383-156030895"
+//params.par1_region = "chrX:10001-2781479"
+//params.par2_region = "chrX:155701383-156030895"
 
 
 process clean_SV_VCF {
     cache "lenient"
     
-    executor "slurm"
-    clusterOptions "--account=rrg-vmooser"
+    //executor "slurm"
+    //clusterOptions "--account=rrg-vmooser"
 
     cpus 1
     memory "8GB"
     time "1h"
-    scratch '$SLURM_TMPDIR'
+    //scratch '$SLURM_TMPDIR'
 
     input:
-    tuple path(sv_vcf), path(sv_index)
+    tuple path(sv_vcf), path(sv_vcf_index)
     
     output:
-    tuple stdout, path("*.SVs.cleaned.vcf.gz"), path("*.SVs.cleaned.vcf.gz.tbi")
+    path("*.SVs.cleaned.vcf.gz")
     
     publishDir "SV_vcfs/", pattern: "*.SVs.cleaned.vcf.gz*", mode: "copy"
     """
     chr=`bcftools index -s ${sv_vcf} | cut -f1`
     if [ "\$chr" = "chrX" ]; then
-    # Process the PAR regions (where males and females are diploid) in a similar way as autosomal chromosomes below.
-    bcftools view ${sv_vcf} ${params.par1_region} -Ou | bcftools +fill-tags -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_PAR1.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
-    bcftools index -t chrX_PAR1.SVs.cleaned.vcf.gz
+        # Process the PAR regions (where males and females are diploid) in a similar way as autosomal chromosomes below.
+        bcftools view ${sv_vcf} ${params.par1_region} -Ou | bcftools +fill-tags -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_PAR1.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
+        bcftools index -t chrX_PAR1.SVs.cleaned.vcf.gz
 
-    bcftools view ${sv_vcf} ${params.par2_region} -Ou | bcftools +fill-tags -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_PAR2.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
-    bcftools index -t chrX_PAR2.SVs.cleaned.vcf.gz
+        bcftools view ${sv_vcf} ${params.par2_region} -Ou | bcftools +fill-tags -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_PAR2.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
+        bcftools index -t chrX_PAR2.SVs.cleaned.vcf.gz
 
-    # Process non-PAR part of chromosome X. Sample must be either haploid or diploid across all non-PAR variants.
-    # First, remove PAR regions:
-    bcftools view -t ^${params.par1_region},${params.par2_region} ${sv_vcf} -Ob -o temp.bcf
-    bcftools index temp.bcf
-    # Second, check that ploidy is the same across all variants for each individual
-    # The bcftools +check-ploidy will output multiple rows per individual if the ploidy was different. If ploidy is the same, then it will output only one row per individual.
-    bcftools +check-ploidy temp.bcf | tail -n+2 | cut -f1 > ploidy.txt
-    bcftools query -l temp.bcf > all_sample_names.txt
-    if ! cmp -s ploidy.txt all_sample_names.txt; then
-            exit 1 # there are individuals with different ploidy at different variants
-    fi
-    # Now we can apply filters similar to the autosomal chromosomes
-    bcftools +fill-tags temp.bcf -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o chrX_nonPAR.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
-    bcftools index -t chrX_nonPAR.SVs.cleaned.vcf.gz
-    echo -n "\${chr}"
+        # Process non-PAR part of chromosome X. Sample must be either haploid or diploid across all non-PAR variants.
+        # First, remove PAR regions:
+        bcftools view -t ^${params.par1_region},${params.par2_region} ${sv_vcf} -Ob -o temp.bcf
+        bcftools index temp.bcf
+        # Second, check that ploidy is the same across all variants for each individual
+        # The bcftools +check-ploidy will output multiple rows per individual if the ploidy was different. If ploidy is the same, then it will output only one row per individual.
+        bcftools +check-ploidy temp.bcf | tail -n+2 | cut -f1 > ploidy.txt
+        bcftools query -l temp.bcf > all_sample_names.txt
+        if ! cmp -s ploidy.txt all_sample_names.txt; then
+                exit 1 # there are individuals with different ploidy at different variants
+        fi
+        # Now we can apply filters similar to the autosomal chromosomes
+        bcftools +fill-tags temp.bcf -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fill-from-fasta -Oz -o chrX_nonPAR.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
+        bcftools index -t chrX_nonPAR.SVs.cleaned.vcf.gz
     else
-    # a) Compute missigness for each variant
-    # b) Remove variants with missigness >0.1
-    # c) Fill the missing REF alleles with the allele from the reference genome (upstream SV calling tools set all REF alleles to `.` which is not in line with the VCF specs)
-    bcftools +fill-tags ${sv_vcf} -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o \${chr}.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
-    bcftools index -t \${chr}.SVs.cleaned.vcf.gz
-    echo -n "\${chr}"
+        # a) Compute missigness for each variant
+        # b) Remove variants with missigness >0.1
+        # c) Fill the missing REF alleles with the allele from the reference genome (upstream SV calling tools set all REF alleles to `.` which is not in line with the VCF specs)
+        bcftools +fill-tags ${sv_vcf} -Ou -- -t F_MISSING | bcftools view -e 'F_MISSING>0.1' -Ou | bcftools +fixploidy -Ou | bcftools +fill-from-fasta -Oz -o \${chr}.SVs.cleaned.vcf.gz -- -c REF -f ${params.ref} 
+        bcftools index -t \${chr}.SVs.cleaned.vcf.gz
     fi
     """
 }
@@ -83,13 +81,13 @@ process clean_SV_VCF {
 process concat_VCF {
     cache "lenient"
   
-    executor "slurm"
-    clusterOptions "--account=rrg-vmooser"
+    //executor "slurm"
+    //clusterOptions "--account=rrg-vmooser"
 
     cpus 1
     memory "8GB"
     time "2h"
-    scratch '$SLURM_TMPDIR'
+    //scratch '$SLURM_TMPDIR'
 
     input:
     tuple val(chr_name), path(snv_vcf), path(snv_index), path(sv_vcf), path(sv_index)
@@ -120,21 +118,8 @@ process concat_VCF {
 workflow {
     snv_ch = Channel.fromPath(params.snv_vcf_path).map{ vcf -> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
     sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
+    
     cleaned_sv_ch = clean_SV_VCF(sv_ch)
-
-    sv_chrX_vcfs = cleaned_sv_ch.filter { it[0].contains('chrX') }
-    sv_chrX_ch = sv_chrX_vcfs.flatMap { chr, vcfs, vcf_indices ->
-         vcfs.collect { vcf -> [vcf.getSimpleName(), vcf, vcf.toString() + ".tbi"] }
-         }
-    sv_autosomal_vcfs = cleaned_sv_ch.filter { !it[0].contains('chrX')}
-
-    snv_chrX_vcfs = snv_ch.filter { it[0].contains('chrX') }
-    snv_autosomal_vcfs = snv_ch.filter { !it[0].contains('chrX')}
-
-
-    combined_autosomal = snv_autosomal_vcfs.combine(sv_autosomal_vcfs, by: 0)
-    combined_chrX = snv_chrX_vcfs.combine(sv_chrX_ch, by: 0)
-    all_vcfs = combined_autosomal.concat(combined_chrX)
-
-    concat_VCF(all_vcfs)
+    flatted_sv_ch = cleaned_sv_ch.flatten().map{ vcf-> [vcf.getSimpleName(), vcf, vcf + ".tbi" ] }
+    concat_VCF(snv_ch.combine(flatted_sv_ch, by: 0))
 }
