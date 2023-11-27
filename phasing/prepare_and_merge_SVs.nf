@@ -118,8 +118,21 @@ workflow {
     sv_ch = Channel.fromPath(params.sv_vcf_path).map{ vcf -> [vcf, vcf + ".tbi" ] }
     cleaned_sv_ch = clean_SV_VCF(sv_ch)
 
-    chrX_vcfs = cleaned_sv_ch.filter { it[0].contains('chrX') }
-    autosomal_vcfs = cleaned_sv_ch.filter { !it[0].contains('chrX') }
-    //concatenation to be done! the problem is sv_ch will return 3 vcfs for chrX and this should be aligned to the input SNVs.
-    //concat_VCF(snv_ch.combine(sv_ch_with_X, by: 0))
+    sv_chrX_vcfs = cleaned_sv_ch.filter { it[0].contains('chrX') }
+    sv_chrX_ch = sv_chrX_vcfs.flatMap { chr, vcfs, vcf_indices ->
+         vcfs.collect { vcf -> [vcf.getSimpleName(), vcf, vcf.toString() + ".tbi"] }
+         }
+    sv_autosomal_vcfs = cleaned_sv_ch.filter { !it[0].contains('chrX')}
+
+    snv_chrX_vcfs = snv_ch.filter { it[0].contains('chrX') }
+    snv_autosomal_vcfs = snv_ch.filter { !it[0].contains('chrX')}
+
+
+    combined_autosomal = snv_autosomal_vcfs.combine(sv_autosomal_vcfs, by: 0)
+    combined_chrX = snv_chrX_vcfs.combine(sv_chrX_ch, by: 0)
+    all_vcfs = combined_autosomal.concat(combined_chrX)
+
+    concat_VCF(all_vcfs)
+
+
 }
