@@ -16,21 +16,25 @@
 // How to run:
 // nextflow run prepare_and_merge_SVs.nf --snv_vcf_path="/path/to/snv/*.vcf.gz" --sv_vcf_path="/path/to/sv/*.vcf.gz" --ref /path/to/Homo_sapiens.GRCh38.fa
 
-//params.snv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
-//params.sv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
-//params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
+params.snv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+params.sv_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome. The index files must be located in the same directory.
+params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
+
+// PAR region coordinates for GRCh38. Change only when working with different human genome reference build.
+params.par1_region = "chrX:10001-2781479"
+params.par2_region = "chrX:155701383-156030895"
 
 
 process clean_SV_VCF {
     cache "lenient"
     
-    //executor "slurm"
-    //clusterOptions "--account=rrg-vmooser"
+    executor "slurm"
+    clusterOptions "--account=rrg-vmooser"
 
     cpus 1
     memory "8GB"
     time "1h"
-    //scratch '$SLURM_TMPDIR'
+    scratch '$SLURM_TMPDIR'
 
     input:
     tuple path(sv_vcf), path(sv_index)
@@ -79,13 +83,13 @@ process clean_SV_VCF {
 process concat_VCF {
     cache "lenient"
   
-    //executor "slurm"
-    //clusterOptions "--account=rrg-vmooser"
+    executor "slurm"
+    clusterOptions "--account=rrg-vmooser"
 
     cpus 1
     memory "8GB"
     time "2h"
-    //scratch '$SLURM_TMPDIR'
+    scratch '$SLURM_TMPDIR'
 
     input:
     tuple val(chr_name), path(snv_vcf), path(snv_index), path(sv_vcf), path(sv_index)
@@ -133,6 +137,4 @@ workflow {
     all_vcfs = combined_autosomal.concat(combined_chrX)
 
     concat_VCF(all_vcfs)
-
-
 }
