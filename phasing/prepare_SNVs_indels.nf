@@ -13,15 +13,18 @@
 // 5. Compile/install vt (https://github.com/atks/vt)
 
 // How to execute:
-// nextflow run prepare_SNVs_indels.nf --vcf_path "/home/user/data/chr*.vcf.gz" --ref "/home/user/reference/GRCh38.fa" --vt "/home/user/tools/vt/vt"
+// nextflow run prepare_SNVs_indels.nf --vcf_path "/home/user/data/chr*.vcf.gz" --sex_file "/path/to/sex.txt" --ref "/home/user/reference/GRCh38.fa" --vt "/home/user/tools/vt/vt"
 
 params.vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome
 params.ref = "/path/to/reference/Homo_sapiens.GRCh38.fa" // Absolute path to the FASTA file with the human genome reference
 params.vt = "/path/to/executable/vt" // Absolute path to the vt executable
+params.sex_file = "/path/to/sex.txt" // File with the sex (coded as M or F) for each individual. Two tab-delimited columns without header: individual ID, sex (M or F). No missing values.
 
 // PAR region coordinates for GRCh38. Change only when working with different human genome reference build.
 params.par1_region = "chrX:10001-2781479"
 params.par2_region = "chrX:155701383-156030895"
+params.fixploidy_region1 = "chrX 1 10000 M 1"
+params.fixploidy_region2 = "chrX 2781480 155701382 M 1"
 
 process clean_VCF {
     errorStrategy 'retry'
@@ -65,8 +68,14 @@ process clean_VCF {
 	if ! cmp -s ploidy.txt all_sample_names.txt; then
             exit 1 # there are individuals with different ploidy at different variants
 	fi
-	# Now we can apply filters similar to the autosomal chromosomes
-	bcftools +setGT -Ou temp.bcf -- -t q -n . -i 'FT!="PASS"' | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS,F_MISSING | bcftools view -e 'F_MISSING>0.1 || AC < 1' -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o chrX_nonPAR.norm.dedup.vcf.gz
+	
+	# Now we can apply filters similar to the autosomal chromosomes with the difference that we need to set missing genotypes to any heterozygous genotype in males (we observed several males coded as diploids by the upstream tools)
+	grep -wF "M" ${params.sex_file} | cut -f1 > males.txt
+
+	echo "${params.fixploidy_region1}" > fixploidy_regions.txt
+	echo "${params.fixploidy_region2}" >> fixploidy_regions.txt
+
+        bcftools +setGT -Ou temp.bcf -- -t q -n . -i 'FT!="PASS"' | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +setGT -Ou -- -i "GT[@males.txt]='het'" -t q -n ./. | bcftools +fixploidy -Ou -- -p haploids.txt -s males.txt | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS,F_MISSING | bcftools view -e 'F_MISSING>0.1 || AC < 1' -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o chrX_nonPAR.norm.dedup.vcf.gz
 	bcftools index -t chrX_nonPAR.norm.dedup.vcf.gz
     else
         # a. set GT to missing if it didn't pass QC
