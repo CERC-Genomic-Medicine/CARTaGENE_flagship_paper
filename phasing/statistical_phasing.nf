@@ -86,13 +86,13 @@ process remove_singletons {
     cache "lenient"
     cpus 1
 
-    //executor 'slurm'
-    //clusterOptions '--account=rrg-vmooser'
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
 
     memory "16GB"
     time "5h"
 
-    //scratch "$SLURM_TMPDIR"
+    scratch "$SLURM_TMPDIR"
     input:
     tuple path(vcf), path(vcf_index)
     
