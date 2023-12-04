@@ -96,7 +96,7 @@ process rm_chr_name_study{
 }
 
 process get_chunks {
-	errorStrategy 'retry'
+    errorStrategy 'retry'
     maxRetries 3
     cache "lenient"
     cpus 1
@@ -104,12 +104,12 @@ process get_chunks {
     executor 'slurm'
     clusterOptions '--account=rrg-vmooser'
 
-	memory "4GB"
+    memory "4GB"
     time "00:30:00"
     scratch "$SLURM_TMPDIR"
 
-	input:
-	tuple val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf), path(ref_vcf), path(ref_vcf_index)
+    input:
+    tuple val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf), path(ref_vcf), path(ref_vcf_index)
 
     output:
     tuple path("*.chunk"), val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf)
@@ -125,22 +125,22 @@ process get_chunks {
 
     # We identify the start and end position of each chunk by iterating over the start-end interval. And we save the information of each non-empty chunk in a txt file.
     extend=0
-	for i in `seq \${start_bp} ${params.window} \${stop_bp}`; do
-		if [ \${extend} -eq 0 ]; then
-			chunk_start=\$((${params.flank} > i ? 1 : i - ${params.flank}))
-		fi
-		chunk_stop=\$((i + ${params.window} + ${params.flank}))
-		n=`bcftools view -HG ${study_vcf} \${chrom}:\${chunk_start}-\${chunk_stop} | wc -l`
-		if [ \${n} -gt 0 ]; then
-			printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
-			extend=0
-		else
-			extend=1
-		fi
-	done
-	if [ \${extend} -eq 1 ]; then
-		printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
-	fi
+    for i in `seq \${start_bp} ${params.window} \${stop_bp}`; do
+        if [ \${extend} -eq 0 ]; then
+            chunk_start=\$((${params.flank} > i ? 1 : i - ${params.flank}))
+        fi
+        chunk_stop=\$((i + ${params.window} + ${params.flank}))
+        n=`bcftools view -HG ${study_vcf} \${chrom}:\${chunk_start}-\${chunk_stop} | wc -l`
+        if [ \${n} -gt 0 ]; then
+            printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
+            extend=0
+        else
+            extend=1
+        fi
+    done
+    if [ \${extend} -eq 1 ]; then
+        printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
+    fi
 	"""
 }
 
@@ -174,7 +174,7 @@ process minimac_imputation{
     # We extract the start and end position of each chunk from the chunk info file.
     chrom=`head -n1 ${chunk} | cut -f1`
     start_bp=`head -n1 ${chunk} | cut -f2`
-	stop_bp=`head -n1 ${chunk} | cut -f3`
+    stop_bp=`head -n1 ${chunk} | cut -f3`
 
     # We extract the chunk interval from the input genotyping array VCF.
     bcftools view -r \${chrom}:\${start_bp}-\${stop_bp} ${study_vcf} -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz 
@@ -199,34 +199,34 @@ process minimac_imputation{
 }
 
 process concat_vcfs {
-	errorStrategy 'retry'
+    errorStrategy 'retry'
     maxRetries 3
-	cache "lenient"
-	scratch true
-	cpus 1
+    cache "lenient"
+    scratch true
+    cpus 1
     executor 'slurm'
     clusterOptions '--account=rrg-vmooser'
 
-	memory "512G"
-	time "24h"
+    memory "512G"
+    time "24h"
     scratch "$SLURM_TMPDIR"
 
-	input:
-	tuple val(chromosome), path(imputed_vcfs), path(imputed_vcfs_index), path(imputed_emp_vcfs), path(imputed_emp_vcfs_index), path(info)
+    input:
+    tuple val(chromosome), path(imputed_vcfs), path(imputed_vcfs_index), path(imputed_emp_vcfs), path(imputed_emp_vcfs_index), path(info)
 
-	output:
-	tuple path("*.imputed.dose.vcf.gz"), path("*.imputed.dose.vcf.gz.tbi"), path("*.imputed.empiricalDose.vcf.gz"), path("*.imputed.empiricalDose.vcf.gz.tbi")
+    output:
+    tuple path("*.imputed.dose.vcf.gz"), path("*.imputed.dose.vcf.gz.tbi"), path("*.imputed.empiricalDose.vcf.gz"), path("*.imputed.empiricalDose.vcf.gz.tbi")
 
-	publishDir "final_imputed_vcfs/", pattern: "*.vcf.gz*", mode: "copy"
+    publishDir "final_imputed_vcfs/", pattern: "*.vcf.gz*", mode: "copy"
 
     script:
-	"""
+    """
     # We need to concat the imputed and meta-imputed chunks for each chromosome.
     chrom=\$(echo -n "${chromosome}" | tr -d '\n')
-	for f in ${imputed_vcfs}; do echo \${f}; done | sort -V > files_list.txt
-	bcftools concat -f files_list.txt  -Oz -o \${chrom}.imputed.dose.vcf.gz
-	bcftools index --tbi \${chrom}.imputed.dose.vcf.gz
-	for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
+    for f in ${imputed_vcfs}; do echo \${f}; done | sort -V > files_list.txt
+    bcftools concat -f files_list.txt  -Oz -o \${chrom}.imputed.dose.vcf.gz
+    bcftools index --tbi \${chrom}.imputed.dose.vcf.gz
+    for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
     bcftools concat -f files_list.txt -Oz -o \${chrom}.imputed.empiricalDose.vcf.gz
     bcftools index --tbi \${chrom}.imputed.empiricalDose.vcf.gz
 	"""
