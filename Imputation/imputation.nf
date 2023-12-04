@@ -114,14 +114,14 @@ process get_chunks {
     output:
     tuple path("*.chunk"), val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf)
 
-	"""
+    """
     # To be able to perform imputation for large scale genotyping array data, we would need to split each chromosome to smaller chunks and
     # perform the imputation on each of the chunks separately and combine the imputed chunks at the end.
 
     # We extract the chromosome number, start and end position of the chromosome in the reference panel.
     chrom=`bcftools index -s ${ref_vcf} | cut -f1`
     start_bp=`bcftools view -HG ${ref_vcf} | head -n1 | cut -f2`
-	stop_bp=`bcftools index -s ${ref_vcf} | cut -f2`
+    stop_bp=`bcftools index -s ${ref_vcf} | cut -f2`
 
     # We identify the start and end position of each chunk by iterating over the start-end interval. And we save the information of each non-empty chunk in a txt file.
     extend=0
@@ -141,7 +141,7 @@ process get_chunks {
     if [ \${extend} -eq 1 ]; then
         printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
     fi
-	"""
+    """
 }
 
 
@@ -229,7 +229,7 @@ process concat_vcfs {
     for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
     bcftools concat -f files_list.txt -Oz -o \${chrom}.imputed.empiricalDose.vcf.gz
     bcftools index --tbi \${chrom}.imputed.empiricalDose.vcf.gz
-	"""
+    """
 }
 
 
