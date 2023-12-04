@@ -47,5 +47,5 @@ workflow {
         ref_ch = Channel.fromPath(params.ref_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.')[0], vcf, vcf + ".tbi" ] }
         study_ch = Channel.fromPath(params.study_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.')[0], vcf, vcf + ".tbi" ] }
    
-        phased = eagle_phased(ref_vcfs.combine(study_vcfs, by:[0]))
+        phased = eagle_phased(ref_ch.combine(study_ch, by:[0]))
 }
