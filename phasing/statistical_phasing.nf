@@ -5,27 +5,28 @@
 * YEAR: 2023
 */
 
+// This pipeline performs statistical phasing using BEAGLE.
 // How to run:
 // nextflow run statistical_phasing.nf --vcf_path /path/to/chr*.vcf.gz --beagle /path/to/BEAGLE5/beagle --genetic_map_path /path/to/plink.chr*.map -with-report report.html
 
-//params.vcf_path = "/path/to/chr*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome (chromosome X splitted to PAR1, PAR2, non_PAR)
-//params.beagle = "/path/to/executable/beagle" // Absolute path to the Beagle executable
-//params.genetic_map_path = "/path/to/plink.chr*.map" // Absolute path to the genetic map for Beagle split by chromosome (chromosome X splitted to PAR1, PAR2, non_PAR)
-//params.iteration = 12 // number of iteration for the BEAGLE statistical phasing, default value is 12.
-//params.seed = 3849 // seed for the Hidden Markov Model of BEAGLE, it can be any random number.
+params.vcf_path = "/path/to/chr*.vcf.gz" // Absolute path to the Input VCF/BCF files split by chromosome (chromosome X splitted to PAR1, PAR2, non_PAR)
+params.beagle = "/path/to/executable/beagle" // Absolute path to the Beagle executable
+params.genetic_map_path = "/path/to/plink.chr*.map" // Absolute path to the genetic map for Beagle split by chromosome (chromosome X splitted to PAR1, PAR2, non_PAR)
+params.iteration = 12 // number of iteration for the BEAGLE statistical phasing, default value is 12.
+params.seed = 3849 // seed for the Hidden Markov Model of BEAGLE, it can be any random number.
 
 process beagle_statistical_phasing {
-    //errorStrategy 'retry'
-    //maxRetries 3
+    errorStrategy 'retry'
+    maxRetries 3
     cache "lenient"
     
-    //executor 'slurm'
-    //clusterOptions '--account=rrg-vmooser'
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
 
     cpus 8
     memory "32GB"
     time "10h"
-    //scratch "$SLURM_TMPDIR"
+    scratch "$SLURM_TMPDIR"
 
     input:
     tuple val(chromosome), path(vcf), path(vcf_index), path(genetic_map)
@@ -58,14 +59,14 @@ process recalculate_AF_phased {
     maxRetries 3
     cache "lenient"
 
-    //executor 'slurm'
-    //clusterOptions '--account=rrg-vmooser'
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
 
     cpus 1
     memory "8GB"
     time "4h"
 
-    //scratch "$SLURM_TMPDIR"
+    scratch "$SLURM_TMPDIR"
 
     input:
     tuple path(vcf), path(vcf_index)
