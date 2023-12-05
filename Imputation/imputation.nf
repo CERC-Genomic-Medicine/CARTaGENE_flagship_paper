@@ -11,8 +11,8 @@
 // How to run:
 // nextflow run imputation.nf --ref_vcf_path /path/to/*.vcf.gz  --study_vcf_path /path/to/*.vcf.gz --minimac3 /path/to/minimac3 --minimac4 /path/to/minimac4  --window window_size --flank flank_size -with-report report.html
 
-params.ref_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF file split by the chromosome
-params.study_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by the chromosome
+params.ref_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the haplotype reference panel VCF/BCF file (WGS) split by the chromosome
+params.study_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the GWAS study VCF/BCF files (genotyping array) split by the chromosome
 
 params.minimac3 = "/path/to/executable/minimac3" // Absolute path to the minimac3 executable
 params.minimac4 = "/path/to/executable/minimac4" // Absolute path to the minimac4 executable 

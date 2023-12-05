@@ -10,8 +10,8 @@
 // How to run:
 // nextflow run pre_phasing.nf --ref_vcf_path /path/to/*.vcf.gz  --study_vcf_path /path/to/*.vcf.gz --eagle /path/to/Eagle_v2.4.1/eagle --eagle_genetic_map /path/to/genetic_map_hg38_withX.txt.gz  -with-report report.html
 
-params.ref_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF file split by the chromosome
-params.study_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the Input VCF/BCF files split by the chromosome
+params.ref_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the haplotype reference panel VCF/BCF file (WGS) split by the chromosome
+params.study_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the GWAS study VCF/BCF files (genotyping array) split by the chromosome
 
 params.eagle = "/path/to/executable/eagle" // Absolute path to the Eagle executable
 params.eagle_genetic_map = "/path/to/genetic_map/genetic_map_hg38_withX.txt.gz" // Absolute path to the genetic map from Eagle software
