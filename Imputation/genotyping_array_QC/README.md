@@ -10,8 +10,8 @@ bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%AF\n' /path/to/reference_vcf > ref
 Then we can calculate the sample size of each dataset using the following commands:
 
 ```bash
-bcftools query -l path/to/genotyping_array_vcf | wc
-bcftools query -l /path/to/reference_vcf | wc
+bcftools query -l path/to/genotyping_array_vcf | wc | awk '{print $1}'
+bcftools query -l /path/to/reference_vcf | wc | awk '{print $1}'
 ```
 
 Then we run the fisher exact python program using the following command: 
