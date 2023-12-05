@@ -17,10 +17,10 @@ bcftools query -l /path/to/reference_vcf | wc
 Then we run the fisher exact python program using the following command: 
 
 ```bash
-python Fisher_exact.py -ig genotyping_array_AF.txt -ir reference_AF.txt -ng genotyping_array_sample_size -nr referene_sample_size -o path/to/output txt file containing p-values for each variant
+python Fisher_exact.py -ig genotyping_array_AF.txt -ir reference_AF.txt -ng genotyping_array_sample_size -nr referene_sample_size -o path/to/output_txt_file
 ```
 
-Then we filter out variants from the genotyping array data which had significant differences in allele frequence
+Then we filter out variants from the genotyping array data which had significant differences in allele frequencies
 (significance p-value threshold of 1e-50).
 
 This codes can be parallelized based on the chromosomes if needed to increase the speed.
