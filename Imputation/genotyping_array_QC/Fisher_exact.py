@@ -3,7 +3,7 @@ from scipy.stats import fisher_exact
 import pandas as pd
 import argparse
 
-argparser = argparse.ArgumentParser(description = 'Develop a Python script for performing a two-sided Fisher\'s Exact Test. This script will be specifically designed to compare allele frequencies obtained from genotyping array data with those from a reference panel.')
+argparser = argparse.ArgumentParser(description = 'A script for performing a two-sided Fisher\'s Exact Test. This script is specifically designed to compare allele frequencies obtained from genotyping array data with those from a reference panel.')
 argparser.add_argument('-ig', '--input_genotyping_array', dest = 'genotyping_array_file_path', required = True, help = 'Path to the input txt file containing following columns for the genotyping array data:[chromosome, position, reference allele, alternate allele, allele frequency].')
 argparser.add_argument('-ir', '--input_reference_panel', dest = 'reference_panel_file_path', required = True, help = 'Path to the input txt file containing following columns for the reference panel data:[chromosome, position, reference allele, alternate allele, allele frequency].')
 argparser.add_argument('-ng', '--sample_size_genotyping_data', dest = 'genotyping_data_sample_size', required = True, help = 'sample size of genotyping data.')
