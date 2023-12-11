@@ -1,213 +1,189 @@
 #!/usr/bin/env nextflow
 /*
-* AUTHOR: Mohadese Sayahian Dehkordi, <mohadese.sayahiandehkordi@mail.mcgill.ca>
-* Adapted and modified get_chunk and ligate from https://github.com/CERC-Genomic-Medicine/shapeit4_pipeline/blob/main/Phasing.nf by Daniel Taliun, PhD <daniel.taliun@mcgill.ca>
-* VERSION: 3.0
+* AUTHOR: Mohadese Sayahian Dehkordi, <mohadese.sayahiandehkordi@mail.mcgill.ca>, Daniel Taliun, PhD <daniel.taliun@mcgill.ca>
+* Adapted and modified get_chunk and concat from https://github.com/CERC-Genomic-Medicine/shapeit4_pipeline/blob/main/Phasing.nf by Daniel Taliun, PhD <daniel.taliun@mcgill.ca>
+* VERSION: 4.0
 * YEAR: 2023
 */
 
-process get_ref_chr_names{
-    cache "lenient"
-    cpus 1
-    memory "4GB"
-    time "00:30:00"
-    scratch true
+// This pipeline performs imputation using minimac 4.
 
-    input:
-    tuple val(sex_id), path(vcf), path(vcf_index)
+// How to run:
+// nextflow run imputation.nf --ref_vcf_path /path/to/*.vcf.gz  --study_vcf_path /path/to/*.vcf.gz --minimac3 /path/to/minimac3 --minimac4 /path/to/minimac4  --window window_size --flank flank_size -with-report report.html
 
-    output:
-    tuple stdout, val(sex_id), path(vcf), path(vcf_index)
+params.ref_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the haplotype reference panel VCF/BCF file (WGS) split by the chromosome
+params.study_vcf_path = "/path/to/data/*.vcf.gz" // Absolute path to the GWAS study VCF/BCF files (genotyping array) split by the chromosome
 
-    """
-    tabix -l ${vcf} 
-    """
-}
+params.minimac3 = "/path/to/executable/minimac3" // Absolute path to the minimac3 executable
+params.minimac4 = "/path/to/executable/minimac4" // Absolute path to the minimac4 executable 
 
-process rm_chr_name_ref{
-    cache "lenient"
-    cpus 1
-    memory "4GB"
-    time "00:30:00"
+params.window = 2000000 // Size of sliding window that we want to perform imputation in.
+params.flank = 0 //Size of the overlap of sliding windows.
 
-    scratch true
-    input:
-    tuple val(chr_name), val(sex_id), path(vcf), path(vcf_index)
-
-    output:
-    tuple val(chr_name), val(sex_id), path("*.vcf.gz"), path("*.vcf.gz.tbi")
-    
-    script:
-    if (params.chrX == false) {
-    """
-    echo "${chr_name}" > chroms1.txt
-    chr=${chr_name}
-    echo "\${chr:3}" > chroms2.txt
-
-    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
-
-    bcftools annotate --rename-chrs chr_name_conv.txt $vcf -Oz -o ${vcf.getBaseName()}.vcf.gz
-    bcftools index --tbi ${vcf.getBaseName()}.vcf.gz
-    """
-    } else {
-    """
-    echo "${chr_name}" > chroms1.txt
-    echo "X" > chroms2.txt
-
-    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
-
-    bcftools annotate --rename-chrs chr_name_conv.txt $vcf -Oz -o ${vcf.getBaseName()}.vcf.gz
-    bcftools index --tbi ${vcf.getBaseName()}.vcf.gz
-    """
-    }
-}
-
-
-process get_study_chr_names{
-    cache "lenient"
-    cpus 1
-    memory "4GB"
-    time "00:30:00"
-    scratch true
-
-    input:
-    tuple val(sex_id), path(vcf), path(vcf_index)
-
-    output:
-    tuple stdout,  val(sex_id), path(vcf), path(vcf_index)
-
-    """
-    tabix -l ${vcf}
-    """
-}
-
-process rm_chr_name_study{
-    cache "lenient"
-    cpus 1
-    memory "4GB"
-    time "00:30:00"
-    scratch true  
-
-    input:
-    tuple val(chr_name), val(sex_id), path(vcf), path(vcf_index)
-
-    output:
-    tuple val(chr_name), val(sex_id), path("*.vcf.gz"), path("*.vcf.gz.tbi")
-    
-    script:
-    if (params.chrX == false) {
-    """
-    echo "${chr_name}" > chroms1.txt
-    chr=${chr_name}
-    echo "\${chr:3}" > chroms2.txt
-
-    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
-
-    bcftools annotate --rename-chrs chr_name_conv.txt $vcf -Oz -o ${vcf.getBaseName()}.vcf.gz
-    bcftools index --tbi ${vcf.getBaseName()}.vcf.gz
-    """
-    } else {
-    """
-    echo "${chr_name}" > chroms1.txt
-    echo "X" > chroms2.txt
-
-    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
-
-    bcftools annotate --rename-chrs chr_name_conv.txt $vcf -Oz -o ${vcf.getBaseName()}.vcf.gz
-    bcftools index --tbi ${vcf.getBaseName()}.vcf.gz
-    """
-    }
-}
-
-
-process convert_ref_vcf{
-    //errorStrategy 'retry'
-    //maxRetries 3
+process convert_ref_vcfs{
+    errorStrategy 'retry'
+    maxRetries 3
     cache "lenient"
     cpus 4
+
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
+
     memory "64GB"
     time "5h"
-    scratch true
+    scratch "$SLURM_TMPDIR"
 
     input:
-    tuple val(chr_name), val(sex_id), path(ref_vcf), path(ref_vcf_index)
+    tuple val(chr_name), path(ref_vcf), path(ref_vcf_index)
     
     output:
-    tuple val(chr_name), val(sex_id), path( "*.m3vcf.gz")
+    tuple val(chr_name), path( "*.m3vcf.gz"), path("*.vcf.gz"), path("*.vcf.gz.tbi")
     
     publishDir "minimac_m3vcfs/", pattern: "*.m3vcf.gz", mode: "copy"
 
+    script:
     """
-    ${params.minimac3} --refHaps ${ref_vcf} --cpus 4 --processReference --rsid --prefix ${ref_vcf.getBaseName()}
+    # First, Minimac requires us to remove "chr" from the name of the chromosome in the VCF file. i.e if the chromosome name in the VCF looks like chr9 we need to convert it to 9 for chromosome 9.
+    
+    echo "${chr_name}" > chroms1.txt
+    chr=${chr_name}
+    echo "\${chr:3}" > chroms2.txt
+
+    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
+
+    bcftools annotate --rename-chrs chr_name_conv.txt ${ref_vcf} -Oz -o ${ref_vcf.getBaseName()}.vcf.gz
+    bcftools index --tbi ${ref_vcf.getBaseName()}.vcf.gz
+
+    # Second, Minimac require us to convert the reference haplotypes to m3vcf format which can be accuired by using Minimac 3 software. This format allow faster analysis.
+    ${params.minimac3} --refHaps ${ref_vcf.getBaseName()}.vcf.gz --cpus 4 --processReference --rsid --prefix ${ref_vcf.getBaseName()}
     """
 }
 
-process get_chunks_study {
-	//executor "local"
-	cache "lenient"
-	cpus 1
-	memory "4GB"
-    time "00:30:00"
 
-	input:
-	tuple val(chr_name), val(start_bp), val(stop_bp), val(sex_id), path(vcf), path(vcf_index)
-
-    output:
-    tuple path("*.chunk"), val(chr_name), val(sex_id), path(vcf), path(vcf_index)
-
-	"""
-    chrom=`bcftools index -s ${vcf} | cut -f1`
-       
-    extend=0
-	for i in `seq ${start_bp} ${params.window} ${stop_bp}`; do
-		if [ \${extend} -eq 0 ]; then
-			chunk_start=\$((${params.flank} > i ? 1 : i - ${params.flank}))
-		fi
-		chunk_stop=\$((i + ${params.window} + ${params.flank}))
-		n=`bcftools view -HG ${vcf} \${chrom}:\${chunk_start}-\${chunk_stop} | wc -l`
-		if [ \${n} -gt 0 ]; then
-			printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
-			extend=0
-		else
-			extend=1
-		fi
-	done
-	if [ \${extend} -eq 1 ]; then
-		printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
-	fi
-	"""
-}
-
-process minimac_imputation{
-    //errorStrategy 'retry'
-    //maxRetries 3
+process rm_chr_name_study{
+    errorStrategy 'retry'
+    maxRetries 3
     cache "lenient"
-    cpus 8
-    memory "128GB"
-    time "36h"
-    scratch true  
+    cpus 1
+
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
+
+
+    memory "4GB"
+    time "00:30:00"
+    scratch "$SLURM_TMPDIR"
 
     input:
-    tuple val(chr_name), val(sex_id), file(ref_vcf), path(chunk), file(study_vcf), file(study_vcf_index)
+    tuple val(chr_name), path(vcf), path(vcf_index)
+
+    output:
+    tuple val(chr_name), path("*.vcf.gz"), path("*.vcf.gz.tbi")
+    
+    script:
+    """
+    # Minimac requires us to remove "chr" from the name of the chromosome in the VCF file. i.e if the chromosome name in the VCF looks like chr9 we need to convert it to 9 for chromosome 9.
+
+    echo "${chr_name}" > chroms1.txt
+    chr=${chr_name}
+    echo "\${chr:3}" > chroms2.txt
+
+    paste chroms1.txt chroms2.txt > chr_name_conv.txt  
+
+    bcftools annotate --rename-chrs chr_name_conv.txt $vcf -Oz -o ${vcf.getBaseName()}.vcf.gz
+    bcftools index --tbi ${vcf.getBaseName()}.vcf.gz
+    """
+}
+
+process get_chunks {
+    errorStrategy 'retry'
+    maxRetries 3
+    cache "lenient"
+    cpus 1
+
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
+
+    memory "4GB"
+    time "00:30:00"
+    scratch "$SLURM_TMPDIR"
+
+    input:
+    tuple val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf), path(ref_vcf), path(ref_vcf_index)
+
+    output:
+    tuple path("*.chunk"), val(chr_name), path(study_vcf), path(study_vcf_index), path(ref_m3vcf)
+
+    """
+    # To be able to perform imputation for large scale genotyping array data, we would need to split each chromosome to smaller chunks and
+    # perform the imputation on each of the chunks separately and combine the imputed chunks at the end.
+
+    # We extract the chromosome number, start and end position of the chromosome in the reference panel.
+    chrom=`bcftools index -s ${ref_vcf} | cut -f1`
+    start_bp=`bcftools view -HG ${ref_vcf} | head -n1 | cut -f2`
+    stop_bp=`bcftools index -s ${ref_vcf} | cut -f2`
+
+    # We identify the start and end position of each chunk by iterating over the start-end interval. And we save the information of each non-empty chunk in a txt file.
+    extend=0
+    for i in `seq \${start_bp} ${params.window} \${stop_bp}`; do
+        if [ \${extend} -eq 0 ]; then
+            chunk_start=\$((${params.flank} > i ? 1 : i - ${params.flank}))
+        fi
+        chunk_stop=\$((i + ${params.window} + ${params.flank}))
+        n=`bcftools view -HG ${study_vcf} \${chrom}:\${chunk_start}-\${chunk_stop} | wc -l`
+        if [ \${n} -gt 0 ]; then
+            printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
+            extend=0
+        else
+            extend=1
+        fi
+    done
+    if [ \${extend} -eq 1 ]; then
+        printf "\${chrom}\t\${chunk_start}\t\${chunk_stop}\t\${n}\n" > \${chrom}_\${chunk_start}_\${chunk_stop}.chunk
+    fi
+    """
+}
+
+
+
+process minimac_imputation{
+    errorStrategy 'retry'
+    maxRetries 3
+    cache "lenient"
+    cpus 8
+
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
+
+    memory "128GB"
+    time "36h"
+    scratch "$SLURM_TMPDIR"
+
+    input:
+    tuple val(chr_name), path(chunk), file(study_vcf), file(study_vcf_index), file(ref_vcf)
      
     output:
-    tuple val(chr_name), val(sex_id), path("*.imp.dose.vcf.gz"), path("*.imp.dose.vcf.gz.tbi"), path("*.imp.empiricalDose.vcf.gz"), path("*.imp.empiricalDose.vcf.gz.tbi"), path("*.info")
+    tuple val(chr_name), path("*.imp.dose.vcf.gz"), path("*.imp.dose.vcf.gz.tbi"), path("*.imp.empiricalDose.vcf.gz"), path("*.imp.empiricalDose.vcf.gz.tbi"), path("*.info")
 
     publishDir "imputed_dose_vcfs/", pattern: "*.imp.dose.vcf.gz*", mode: "copy"
     publishDir "empirical_dose_vcfs/", pattern: "*.imp.empiricalDose.vcf.gz*", mode: "copy"
     publishDir "imputed_info/", pattern: "*.info", mode: "copy"
 
     script:
-    if (params.chrX == false) {
     """
+    # We extract the start and end position of each chunk from the chunk info file.
     chrom=`head -n1 ${chunk} | cut -f1`
     start_bp=`head -n1 ${chunk} | cut -f2`
-	stop_bp=`head -n1 ${chunk} | cut -f3`
+    stop_bp=`head -n1 ${chunk} | cut -f3`
+
+    # We extract the chunk interval from the input genotyping array VCF.
     bcftools view -r \${chrom}:\${start_bp}-\${stop_bp} ${study_vcf} -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz 
     bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz
 
-    ${params.minimac4} --refHaps $ref_vcf --rsid --haps study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz  --chr \${chrom} --start \${start_bp} --end \${stop_bp} --minRatio 0.00001 --prefix study.\${chrom}_\${start_bp}_\${stop_bp} --cpus 8  --meta --ignoreDuplicates
+    # Minimac allow us to input the whole vcf for the reference panel and specify the start and end of the chunk we want to impute. This way we don't need to split the ref VCF.
+    ${params.minimac4} --refHaps ${ref_vcf} --rsid --haps study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz  --chr \${chrom} --start \${start_bp} --end \${stop_bp} --minRatio 0.00001 --prefix study.\${chrom}_\${start_bp}_\${stop_bp} --cpus 8  --meta --ignoreDuplicates
 
+    # After performing imputation we need to reannotate the name of the chromosome in the final imputed VCF. i.e. from 9 to chr9.
     echo "${chr_name}" > chroms1.txt
     chr=${chr_name}
     echo "\${chr:3}" > chroms2.txt
@@ -220,101 +196,57 @@ process minimac_imputation{
     bcftools annotate --rename-chrs chr_name_conv.txt study.\${chrom}_\${start_bp}_\${stop_bp}.empiricalDose.vcf.gz -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.imp.empiricalDose.vcf.gz
     bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.imp.empiricalDose.vcf.gz
     """
-    } else {
-    """
-    chrom=`head -n1 ${chunk} | cut -f1`
-    start_bp=`head -n1 ${chunk} | cut -f2`
-	stop_bp=`head -n1 ${chunk} | cut -f3`
-    bcftools view -r \${chrom}:\${start_bp}-\${stop_bp} ${study_vcf} -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz 
-    bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz
-
-    ${params.minimac4} --refHaps $ref_vcf --rsid --haps study.\${chrom}_\${start_bp}_\${stop_bp}.vcf.gz  --chr \${chrom} --start \${start_bp} --end \${stop_bp} --minRatio 0.00001 --prefix study.\${chrom}_\${start_bp}_\${stop_bp} --cpus 4  --meta --ignoreDuplicates
-
-    echo "chrX" > chroms1.txt
-    echo "X" > chroms2.txt
-
-    paste chroms2.txt chroms1.txt > chr_name_conv.txt  
-
-    bcftools annotate --rename-chrs chr_name_conv.txt study.\${chrom}_\${start_bp}_\${stop_bp}.dose.vcf.gz -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.imp.dose.vcf.gz
-    bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.imp.dose.vcf.gz
-
-    bcftools annotate --rename-chrs chr_name_conv.txt study.\${chrom}_\${start_bp}_\${stop_bp}.empiricalDose.vcf.gz -Oz -o study.\${chrom}_\${start_bp}_\${stop_bp}.imp.empiricalDose.vcf.gz
-    bcftools index --tbi study.\${chrom}_\${start_bp}_\${stop_bp}.imp.empiricalDose.vcf.gz
-    """
-    }
 }
 
 process concat_vcfs {
-	
-	cache "lenient"
-	scratch true
-	cpus 1
-	memory "512G"
-	time "24h"
+    errorStrategy 'retry'
+    maxRetries 3
+    cache "lenient"
+    scratch true
+    cpus 1
+    executor 'slurm'
+    clusterOptions '--account=rrg-vmooser'
 
-	input:
-	tuple val(chromosome), val(sex_id), path(imputed_vcfs), path(imputed_vcfs_index), path(imputed_emp_vcfs), path(imputed_emp_vcfs_index), path(info)
+    memory "512G"
+    time "24h"
+    scratch "$SLURM_TMPDIR"
 
-	output:
-	tuple path("*.imputed.dose.vcf.gz"), path("*.imputed.dose.vcf.gz.tbi"), path("*.imputed.empiricalDose.vcf.gz"), path("*.imputed.empiricalDose.vcf.gz.tbi")
+    input:
+    tuple val(chromosome), path(imputed_vcfs), path(imputed_vcfs_index), path(imputed_emp_vcfs), path(imputed_emp_vcfs_index), path(info)
 
-	publishDir "final_imputed_vcfs/", pattern: "*.vcf.gz*", mode: "copy"
+    output:
+    tuple path("*.imputed.dose.vcf.gz"), path("*.imputed.dose.vcf.gz.tbi"), path("*.imputed.empiricalDose.vcf.gz"), path("*.imputed.empiricalDose.vcf.gz.tbi")
+
+    publishDir "final_imputed_vcfs/", pattern: "*.vcf.gz*", mode: "copy"
 
     script:
-    if (params.chrX == false) {
-	"""
+    """
+    # We need to concat the imputed and meta-imputed chunks for each chromosome.
     chrom=\$(echo -n "${chromosome}" | tr -d '\n')
-	for f in ${imputed_vcfs}; do echo \${f}; done | sort -V > files_list.txt
-	bcftools concat -f files_list.txt  -Oz -o \${chrom}.imputed.dose.vcf.gz
-	bcftools index --tbi \${chrom}.imputed.dose.vcf.gz
-	for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
+    for f in ${imputed_vcfs}; do echo \${f}; done | sort -V > files_list.txt
+    bcftools concat -f files_list.txt  -Oz -o \${chrom}.imputed.dose.vcf.gz
+    bcftools index --tbi \${chrom}.imputed.dose.vcf.gz
+    for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
     bcftools concat -f files_list.txt -Oz -o \${chrom}.imputed.empiricalDose.vcf.gz
     bcftools index --tbi \${chrom}.imputed.empiricalDose.vcf.gz
-	"""
-    } else {
     """
-    if [ "${sex_id}" == "true" ]; then
-        sex="female"
-    else
-        sex="male"
-    fi
-    chrom=\$(echo -n "${chromosome}" | tr -d '\n')
-	for f in ${imputed_vcfs}; do echo \${f}; done | sort -V > files_list.txt
-	bcftools concat -f files_list.txt -l -Oz -o \${chrom}.\${sex}.imputed.dose.vcf.gz
-	bcftools index --tbi \${chrom}.\${sex}.imputed.dose.vcf.gz
-	for f in ${imputed_emp_vcfs}; do echo \${f}; done | sort -V > files_list.txt
-    bcftools concat -f files_list.txt -l -Oz -o \${chrom}.\${sex}.imputed.empiricalDose.vcf.gz
-    bcftools index --tbi \${chrom}.\${sex}.imputed.empiricalDose.vcf.gz
-	"""
-    }
-
 }
 
 
 workflow {
 
-        ref_ch = Channel.fromPath(params.ref_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.').contains('female'), vcf, vcf + ".tbi" ] }
-        study_ch = Channel.fromPath(params.study_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.').contains('female'), vcf, vcf + ".tbi" ] }
+        ref_ch = Channel.fromPath(params.ref_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.').get(0), vcf, vcf + ".tbi" ] }
+        study_ch = Channel.fromPath(params.study_vcf_path).map{ vcf -> [ vcf.name.toString().tokenize('.').get(0), vcf, vcf + ".tbi" ] }
 
-        chromosome_sizes = Channel.fromList([['chr1\n', 10352, 248946390], ['chr2\n', 10369, 242183307], ['chr3\n', 10374, 198230061], ['chr4\n', 10035, 190204491], ['chr5\n', 11507, 181477936], ['chr6\n', 63746, 170744468], ['chr7\n', 16359, 159335877],
-    ['chr8\n', 72806, 145075995], ['chr9\n', 10421, 138318560], ['chr10\n', 10331, 133787400], ['chr11\n', 70402, 135076530], ['chr12\n', 10241, 133264323], ['chr13\n', 16000260, 114353949], ['chr14\n', 16022732, 106883658], ['chr15\n', 17000328, 101981149],
-    ['chr16\n', 10085, 90228306], ['chr17\n', 104112, 83244562], ['chr18\n', 10652, 80262913], ['chr19\n', 60603, 58605828], ['chr20\n', 60148, 64333628], ['chr21\n', 5030957, 46699945], ['chr22\n', 10519389, 50808269]])
-
-        ref_vcfs = get_ref_chr_names(ref_ch)
-        study_vcfs = get_study_chr_names(study_ch)
-        
-        ref_rm_chr_vcfs = rm_chr_name_ref(ref_vcfs)
-        study_rm_chr_vcfs = rm_chr_name_study(study_vcfs)
-
-        study_chunk_ch = chromosome_sizes.join(study_rm_chr_vcfs, by:[0])
-        ref_cnv_vcfs = convert_ref_vcf(ref_rm_chr_vcfs)
-
-        study_chunks = get_chunks_study(study_chunk_ch)
-        chunks_all_study = study_chunks.flatMap { chunks, chromosome, sex_id, vcf, vcf_index ->
-        chunks.collect { chunk -> [chromosome, sex_id, chunk, vcf, vcf_index] }
+        ref_cnv_vcfs = convert_ref_vcfs(ref_ch)
+        study_rm_chr_vcfs = rm_chr_name_study(study_ch)
+        imputation_ch = study_rm_chr_vcfs.combine(ref_cnv_vcfs, by:[0])
+        chunks = get_chunks(imputation_ch)
+         
+        all_chunks = chunks.flatMap { chunks, chromosome, study_vcf, study_vcf_index, ref_m3vcf ->
+        chunks.collect { chunk -> [chromosome, chunk, study_vcf, study_vcf_index, ref_m3vcf] }
         }
-        imputation_ch = ref_cnv_vcfs.combine(chunks_all_study, by:[0, 1])
-        imputed_chunks = minimac_imputation(imputation_ch)
-        concat_vcfs(imputed_chunks.groupTuple(by: [0, 1]))
 
+        imputed_chunks = minimac_imputation(all_chunks)
+        concat_vcfs(imputed_chunks.groupTuple(by:[0]))
 }
