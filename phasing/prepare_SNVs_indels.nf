@@ -36,7 +36,7 @@ process clean_VCF {
 
     cpus 1
     memory "16GB"
-    time "8h"
+    time "16h"
     scratch '$SLURM_TMPDIR'
 
     input:
@@ -75,7 +75,7 @@ process clean_VCF {
 	echo "${params.fixploidy_region1}" > fixploidy_regions.txt
 	echo "${params.fixploidy_region2}" >> fixploidy_regions.txt
 
-        bcftools +setGT -Ou temp.bcf -- -t q -n . -i 'FT!="PASS"' | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +setGT -Ou -- -i "GT[@males.txt]='het'" -t q -n ./. | bcftools +fixploidy -Ou -- -p haploids.txt -s males.txt | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS,F_MISSING | bcftools view -e 'F_MISSING>0.1 || AC < 1' -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o chrX_nonPAR.norm.dedup.vcf.gz
+        bcftools +setGT -Ou temp.bcf -- -t q -n . -i 'FT!="PASS"' | bcftools annotate -x INFO,^FORMAT/GT -Ou | bcftools +setGT -Ou -- -i "GT[@males.txt]='het'" -t q -n ./. | bcftools +fixploidy -Ou -- -p fixploidy_regions.txt -s ${params.sex_file} | bcftools +fill-tags -Ou -- -t AN,AC,AF,NS,F_MISSING | bcftools view -e 'F_MISSING>0.1 || AC < 1' -Ou | ${params.vt} normalize - -r ${params.ref} -o + | ${params.vt} uniq + -o + | bcftools annotate --set-id '%CHROM\\_%POS\\_%REF\\_%ALT' -Oz -o chrX_nonPAR.norm.dedup.vcf.gz
 	bcftools index -t chrX_nonPAR.norm.dedup.vcf.gz
     else
         # a. set GT to missing if it didn't pass QC
