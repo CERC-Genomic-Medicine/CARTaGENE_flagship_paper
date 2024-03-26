@@ -1,0 +1,24 @@
+This is 1000G + HGDP data phased using trio information as part of the GnomAD v3 project.
+The data is published in https://doi.org/10.1101/2023.01.23.525248
+
+Downloaded from:
+gs://gcp-public-data--gnomad/resources/hgdp_1kg/phased_haplotypes_v2
+
+Sample meta-data is available from:
+https://storage.googleapis.com/gcp-public-data--gnomad/release/3.1.2/vcf/genomes/gnomad.genomes.v3.1.2.hgdp_1kg_subset_sample_meta.tsv.bgz
+https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/1kGP.3202_samples.pedigree_info.txt
+
+Steps to prepare samples for benchmarking:
+
+1) Extract all independent trios based on these conditions: (1) sample has mother and father present in the dataset; (2) sample was marked as "related" by GnomAD; (3) both mother and father are not marked as "related" by GnomAD; (4) both mother and father don't have any other children in the dataset; (5) both mother and father don't have their parents (i.e. grandparents) in the dataset; (6) both parents have matching assigned genetic ancestry label.
+
+python extract_trios.py > trios.txt
+
+2) Pick random trios from 'trios.txt' file, e.g.:
+
+grep "^AFR" trios.txt | grep -vw 0 | shuf | head -n10 | cut -f2,3,4 -d" " > AFR_random10.ped
+...
+grep "^EUR" trios.txt | grep -vw 0 | shuf | head -n10 | cut -f2,3,4 -d" " > EUR_random10.ped
+
+3) Subset and phase offsprings in randomly picked trios using tool from https://github.com/odelaneau/makeScaffold.
+
