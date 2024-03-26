@@ -1,0 +1,32 @@
+This is a curated phased data from the GIAB.
+Downloaded from:
+https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/latest/GRCh38/SupplementaryFiles/HG002_NA24385_GRCh38_1_22_v4.2_benchmark_phased_StrandSeq_whatshap.vcf.gz
+https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/ChineseTrio/HG005_NA24631_son/latest/GRCh38/SupplementaryFiles/HG005_GRCh38_1_22_v4.2.1_highconf_hifiasm_v11_phasetransfer.vcf.gz
+https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/latest/GRCh38/SupplementaryFiles/HG001_GRCh38_1_22_v4.2.1_benchmark_hifiasm_v11_phasetransfer.vcf.gz
+
+The files created with the following commands.
+
+HG002 sample:
+1) Remove any multi-allelic variants. Remove unneccesary INFO and FORMAT fileds. Set 1/1 to 1|1. Keep only phased GT.
+bcftools view -m2 -M2 HG002_NA24385_GRCh38_1_22_v4.2_benchmark_phased_StrandSeq_whatshap.vcf.gz | bcftools annotate -x INFO,^FORMAT/GT | bcftools +setGT -- -t q -n p -i "GT='1/1'" | bcftools view -p -Ob -o HG002.phased.bcf
+
+2) Forget the phase information:
+bcftools +setGT HG002.phased.bcf -Ob -o HG002.unphased.bcf -- -t a -n u
+
+
+HG005 sample:
+1) Remove any multi-allelic variants. Remove unneccesary INFO and FORMAT fields. Keep only phased GT. Rename sample.
+echo "HG005" > rename.txt 
+bcftools view -m2 -M2 HG005_GRCh38_1_22_v4.2.1_highconf_hifiasm_v11_phasetransfer.vcf.gz chr2 | bcftools annotate -x INFO,^FORMAT/GT | bcftools view -p -Ob | bcftools reheader -s rename.txt -o HG005.phased.bcf
+
+2) Forget the phase information:
+bcftools +setGT HG005.phased.bcf -Ob -o HG005.unphased.bcf -- -t a -n u
+
+
+HG001 sample:
+1) Remove any multi-allelic variants. Remove unneccessary INFO and FORMAT fields. Keep only phased GT. Rename sample.
+echo "HG001" > rename.txt
+bcftools view -m2 -M2 HG001_GRCh38_1_22_v4.2.1_benchmark_hifiasm_v11_phasetransfer.vcf.gz | bcftools annotate -x INFO,^FORMAT/GT | bcftools view -p -Ob | bcftools reheader -s rename.txt -o HG001.phased.vcf.gz
+
+2) Forget the phase information:
+bcftools +setGT HG001.phased.bcf -Ob -o HG001.unphased.bcf -- -t a -n u
