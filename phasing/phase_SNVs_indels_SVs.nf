@@ -113,6 +113,7 @@ process shapeit5_Xnonpar_phasing_with_reference {
     # 3. After first 2 steps, only missing '.' are left and we can safely run +fixploidy command forcing diploid GT.
     # 4. After these transformation, the AC, AN, and AF values may change and must be recomputed.
     bcftools +setGT ${study_vcf} -Ou -- -i 'GT[@${males_ids_file}]="1"' -t q -n c:"1/1" | bcftools +setGT -Ou -- -i 'GT[@${males_ids_file}]="0"' -t q -n c:"0/0" | bcftools +fixploidy -Ou | bcftools annotate -x ^INFO/END,INFO/SVTYPE,INFO/SVLEN -Ou | bcftools +fill-tags -Ob -o unphased.males2diploids.bcf -- -t AN,AC,AF,NS,F_MISSING
+    bcftools index unphased.males2diploids.bcf
 
     # The INFO/END field for SVs will be dropped by the Shapeit5.1.1 from the output bcf. Without the INFO/END field, the next step, phase_rare, will fail because underlying code will not be able to determine which SVs were already phased.
     # Thus, we will subset the SVs' INFO annotations for later use.
