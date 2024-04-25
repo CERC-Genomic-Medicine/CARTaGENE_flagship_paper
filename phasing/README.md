@@ -9,7 +9,7 @@ The pipelines were run using SLURM job scheduler on the [Digital Research Allian
 The `prepare_SNVs_indels.nf` pipeline prepares VCF/BCF files with SNVs and indels for phasing. The pipeline is self-explanatory and includes the following steps:
 1) Set individual GT values that are flagged as not 'PASS' to missing values. Note: input VCF/BCF files were already pre-filtered to contain only PASS variants.
 2) For autosomal chromosomes and chrX PAR regions, force ploidy to 2.
-3) For chrX non-PAR region, check ploidy for males and females; and set males as haploids (i.e. GT = 0 or GT = 1 instead of GT = 0/0 or GT = 1/1).
+3) For chrX non-PAR region, check ploidy for males and females; and set males as haploids (i.e. GT = 0 or GT = 1 instead of GT = 0/0 or GT = 1/1). If there are heterozygous genotypes for males (i.e. 0/1), then set them to missing.
 4) Recalculate AN, AC, and F_MISSING fields and remove monomorphic variants and variants with missigness >0.1 (recommended threshold by statistical phasing methods).
 5) Left-align indels and deduplicate.
 
@@ -33,4 +33,4 @@ This pipeline uses [Shapeit v5.1.1](https://odelaneau.github.io/shapeit5/) and t
 
 ## (Optional) Benchmarking.
 
-The `benchmark_beagle.nf`, `benchmark_phasing.nf`, and `benchmark_shapeit5.nf` automated pipelines were used to benchmark phasing accuracy with [Shapeit v5.1.1](https://odelaneau.github.io/shapeit5/), [Beagle v5.4](https://faculty.washington.edu/browning/beagle/beagle.html), and [Eagle v2.4.1](https://alkesgroup.broadinstitute.org/Eagle/). For benchmarking, we used trios from [1000 Genomes Project](Trios_1KG) and [Genome In The Bottle (GIAB)](Trios_GIAB). In summary, the pipelines append a trio's child to the study data and run statistical phasing on combined genotypes, one at a time. The child's phased genotypes are then compared to the trio-based phasing. This serves as a proxy for the phasing accuracy of the genotyoes of the other study individuals.
+The `benchmark_beagle.nf`, `benchmark_phasing.nf`, and `benchmark_shapeit5.nf` automated pipelines were used to benchmark phasing accuracy with [Shapeit v5.1.1](https://odelaneau.github.io/shapeit5/), [Beagle v5.4](https://faculty.washington.edu/browning/beagle/beagle.html), and [Eagle v2.4.1](https://alkesgroup.broadinstitute.org/Eagle/). For benchmarking, we used trios from [1000 Genomes Project](Trios_1KG) and [Genome In The Bottle (GIAB)](Trios_GIAB). In summary, the pipelines append a trio's child to the study data and run statistical phasing on combined genotypes, one at a time. The child's phased genotypes are then compared to the trio-based phasing. This serves as a proxy for the phasing accuracy of the genotypes of the other study individuals.
