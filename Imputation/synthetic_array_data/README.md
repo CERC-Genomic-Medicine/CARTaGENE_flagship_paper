@@ -1,4 +1,4 @@
-# Subsetting WGS data to array positions
+# Subsetting WGS data to genotyping array positions
 
 ## Step 1. Download array positions
 Run `download_array_positions.sh` bash script to download positions of variants on Illumna GSA v2 array.
