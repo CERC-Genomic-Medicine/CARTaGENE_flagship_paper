@@ -27,3 +27,5 @@ for i in 4Kphase1vs5Kphase1 4Kphase1vsarchiphase1  17Kphase1vs5Kphase1 archiphas
 plink2 --pfile CARTaGENE_hg38_shared_unrelated --pca 5 --out CARTaGENE
 cut -f 1,2,5  CARTaGENE_hg38_shared.fam | grep -f CARTaGENE_hg38_shared_unrelated.king.cutoff.in.id | sed 's/1$/0/g' | sed 's/2$/1/g' | sed '1i FID\tIID\tSEX'  > SEX_ID
 
+python3 covar_PCA_prep.py
+
