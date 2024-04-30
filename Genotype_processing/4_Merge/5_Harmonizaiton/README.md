@@ -5,10 +5,9 @@
 - Filter said variants.
 
 ## Order
-1) PCA_Projection/Reference_prep
-2) PCA_Projection (Actual Projection)
-3) Harmonization_test
-4) Remove Variants (Remove_Variants.sh
+1) PCA_Projection
+2) Harmonization_test
+3) Remove Variants (Remove_Variants.sh
 
 ## Software
 
