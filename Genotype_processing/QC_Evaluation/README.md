@@ -4,7 +4,7 @@
 
 Provide the Auxiliary information for the CaG data summary
 
-# Table of Array used per regions
+### Table of Array used per regions
 |                | 17k   | 4224 | 5300 | 760 | archi |
 |----------------|-------|------|------|-----|-------|
 | Gatineau       | 754   | 0    | 326  | 1   | 0     |
@@ -14,7 +14,7 @@ Provide the Auxiliary information for the CaG data summary
 | Sherbrooke     | 698   | 229  | 359  | 48  | 0     |
 | Trois-Rivieres | 493   | 0    | 186  | 0   | 0     |
 
-# Table of Array used per regions (%)
+### Table of Array used per regions (%)
 |                | 17k  | 4224 | 5300 | 760  | archi |
 |----------------|------|------|------|------|-------|
 | Gatineau       | 4.4  | 0.0  | 6.2  | 0.1  | 0.0   |
@@ -24,13 +24,13 @@ Provide the Auxiliary information for the CaG data summary
 | Sherbrooke     | 4.0  | 5.5  | 6.9  | 6.6  | 0.0   |
 | Trois-Rivieres | 2.9  | 0.0  | 3.6  | 0.0  | 0.0   |
 
-# Table of Paticipant recruitement phase per array
+### Table of Paticipant recruitement phase per array
 |       | 17k  | 4224 | 5300 | 760 | archi |
 |-------|------|------|------|-----|-------|
 | 1 (A)     | 9828 | 4177 | 2503 | 715 | 1911  |
 | 2 (B)     | 7456 | 1    | 2734 | 11  | 0     |
 
-# Table of Paticipant recruitement phase per array (%)
+### Table of Paticipant recruitement phase per array (%)
 |       | 17k  | 4224 | 5300 | 760  | archi |
 |-------|------|------|------|------|-------|
 | 1  (A)   | 56.9 | 100.0| 47.8 | 98.5 | 100.0 |
