@@ -8,4 +8,4 @@
 - {ARRAY}_hg38_shared.fam # from merge step
 
 
-Result can be found at out [Pheweb](https://cerc-genomic-medicine.ca/pheweb/cartagene/about) (in the next update)
+Result can be found at [Pheweb](https://cerc-genomic-medicine.ca/pheweb/cartagene/about) (in the next update)
