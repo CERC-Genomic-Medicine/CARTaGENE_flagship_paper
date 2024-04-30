@@ -8,22 +8,23 @@
 // This pipeline builds reference panel for mputation with Minimac 4 from phased genotypes in VCF/BCF format.
 
 // How to run:
-// nextflow run prepare_reference.nf --phased_vcf_path "/path/to/chr*.vcf.gz*"  --study_vcf_path /path/to/*.vcf.gz --minimac4 /path/to/minimac4
+// nextflow run prepare_reference.nf --phased_vcf_path "/path/to/chr*.vcf.gz*"  --minimac4 /path/to/minimac4
 
 params.phased_vcf_path = "/path/to/chr*.vcf.gz*" // Absolute path to the phased VCF/BCF file(s) with the corresponding TBI/CSI index file(s). One file per chromosome is expected. Chromosome X splitted into PAR1, PAR2, nonPAR.
 params.minimac4 = "/path/to/minimac4" // Path to Minimac 4 executable
 
+
 process filter_and_convert {
-    errorStrategy 'finish'
-    cache "lenient"
+   errorStrategy 'finish'
+   cache "lenient"
 
-    executor 'slurm'
-    clusterOptions '--account=def-vmooser'
-    //scratch '$SLURM_TMPDIR'
+   executor 'slurm'
+   clusterOptions '--account=def-vmooser'
+   //scratch '$SLURM_TMPDIR'
 
-    cpus 1
-    memory "8GB"
-    time "4h"
+   cpus 1
+   memory "8GB"
+   time "4h"
 
 
    input:
@@ -36,11 +37,16 @@ process filter_and_convert {
 
    """
    # Remove singletons (recommended), and remove unnecessary FORMAT fields
-   bcftools view -c2 ${vcf} -Ou | bcftools annotate -x FORMAT/PP -Oz -o ${chrom}.reference.vcf.gz
-   bcftools index -t ${chrom}.reference.vcf.gz
+   bcftools view -c2 ${vcf} -Ou | bcftools annotate -x FORMAT/PP -Ob -o ${chrom}.reference.bcf
+   bcftools index ${chrom}.reference.bcf
+
+   # Save INFO/END, INFO/SVTYPE, and INFO/SVLEN fields to a separate file. These INFO fields are dropped by Minimac 4, so we will need to add them back to the imputation results.
+   bcftools query -f "%CHROM\t%POS\t%ID\t%REF\t%ALT\t%INFO/END\t%INFO/SVTYPE\t%INFO/SVLEN"  ${chrom}.reference.bcf | bgzip -c > ${chrom}.reference.msav.INFO.tsv.gz
+   tabix -s1 -b2 -e2 ${chrom}.reference.msav.INFO.tsv.gz
+   bcftools view -h ${chrom}.reference.bcf | grep -E "ID=(END,|SVTYPE,|SVLEN,)|##ALT=" > ${chrom}.reference.msav.INFO.txt
 
    # Convert to Minimac 4 format
-   ${params.minimac4} --compress-reference ${chrom}.reference.vcf.gz > ${chrom}.reference.msav
+   ${params.minimac4} --compress-reference ${chrom}.reference.bcf > ${chrom}.reference.msav
    """
 }
 
