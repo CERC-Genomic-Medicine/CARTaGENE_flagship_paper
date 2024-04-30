@@ -17,3 +17,4 @@
 
 ## Used Software :
 -plink/1.9
+-python 3.11
