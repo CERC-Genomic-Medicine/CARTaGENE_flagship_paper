@@ -29,3 +29,14 @@ cut -f 1,2,5  CARTaGENE_hg38_shared.fam | grep -f CARTaGENE_hg38_shared_unrelate
 
 python3 covar_PCA_prep.py
 
+for i in 4Kphase1vs5Kphase1 4Kphase1vsarchiphase1  17Kphase1vs5Kphase1 archiphase1vs760phase1 17Kphase1vs17Kphase2 5Kphase1vs5Kphase2
+do
+plink2 --vcf CARTaGENE_hg38_shared_unrelated.vcf.gz --double-id --pheno "$i".pheno --covar COVARIANT.file --glm hide-covar no-x-sex --out $i
+done
+
+python3 plot_manhattan.py
+
+python3 frq_comparison.py -i AF_ftest_4PC_chr{1..22} AF_ftest_4PC_PAR* -n 482998 -t 'Autosomal and chromosome X PAR' -out Autosomal_AF
+python3 frq_comparison.py -i AF_ftest_4PC_Xfemale -n 482998 -t 'Females X chromosome non-PAR' -out FemaleX_AF
+python3 frq_comparison.py -i AF_ftest_4PC_Xmale -n 482998 -t 'Males X chromosome non-PAR' -out MaleX_AF
+
