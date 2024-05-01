@@ -5,7 +5,7 @@ path=“/path/to/plink_files/*bim”  # path to CAG PLINK binary format's bim fi
 mkdir logs
 
 # Step 1 : Merge pseudo-autosomal regions (XY to X)
-for  bim in ${path} archi; do 
+for  bim in ${path}; do 
         plink -bfile ${bim%.*} --merge-x --make-bed --output-chr MT --out ${bim%.*}_XYmerged
 done
 
