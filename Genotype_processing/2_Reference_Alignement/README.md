@@ -3,8 +3,9 @@ This folder contains the scripts and documentation used to align the CaG v.1.1 d
 
 ## Parameter
 ### Input files
-Bedfiles - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays** issued from the [LiftOver step](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/1_LiftOver)   
-- [Homo_sapiens.GRCh38.fa](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_000001405.28/)
+Bedfiles - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays** issued from the [LiftOver step](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/1_LiftOver)  
+
+[Homo_sapiens.GRCh38.fa](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_000001405.28/)
 
 ### Output files :
 Bedfile - aligned and renamed CaG data v.1.1 in plink .bed format (including .bim .fam companion file) per Genotyping arrays
