@@ -9,7 +9,7 @@ path=“/path/to/plink_files/*bim”  # path to build CAG PLINK binary format's 
 ## Alignement
 
 for bim in ${path} ; do
-        python3 plink2reference.py -b ${bim%} -f ${GRCh38} -o ${bim%.*}                             #Produce documents needed for correct strand-flip and REF/ALT alteration
+        python3 plink2reference.py -b ${bim} -f ${GRCh38} -o ${bim%.*}                             #Produce documents needed for correct strand-flip and REF/ALT alteration
         plink --bfile ${bim%.*}  --exclude ${bim%.*}.remove.txt --make-bed --output-chr chrMT --out temp     #Removes impossible to adjust SNPs
         plink --bfile temp --flip ${bim%.*}.strand_flip.txt --make-bed --output-chr chrMT --out temp2                            # Strand filp
         plink --bfile temp2 --a1-allele ${bim%.*}.force_a1.txt --make-bed --output-chr chrMT --out ${bim%.*}_aligned         # Forces the REF/ALT Designation
