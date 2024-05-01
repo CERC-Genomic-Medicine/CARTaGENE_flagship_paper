@@ -13,11 +13,6 @@ for bim in ${path} ; do
         plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${bim%.*}_shared
 done
 
-for bim in ${bim%.*} ; do 
-        plink --bfile ${bim%.*}_hg38 --keep exclude_dup_sample.txt --missing --out ${bim%.*}.total
-        plink --bfile ${bim%.*}_shared --keep exclude_dup_sample.txt --missing --out ${bim%.*}.dup
-done
-
 ## 760 genotype array was selected since it had less genotyping position initially.
 
 mv 760_hg38_shared.bed 760_hg38_shared_dup.bed
