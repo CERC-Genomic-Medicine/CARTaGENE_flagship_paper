@@ -44,4 +44,4 @@ done
 for bim in *_Hg38_Xmerged.bim; do
         grep rs2341354 ${bim} ;
 done
-# produces postion corresponding to dbsnp Hg38
+# produces postion corresponding to 1:983193 (GRCh38)
