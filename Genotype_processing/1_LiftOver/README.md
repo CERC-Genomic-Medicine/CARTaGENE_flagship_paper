@@ -7,7 +7,7 @@ This folder contains the scripts and documentation used to liftover CaG v.1.1 da
 - [LiftOver](https://genome-store.ucsc.edu/)
 
 ## Input files
-Bedfiles - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays** issued from the [Preprocesssing step](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/0_preprocessing) 
+Bedfiles - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays** issued from the [Preprocesssing step](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/0_preprocessing)   
 [hg19ToHg38.over.chain.gz](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz) from UCSC  
 
 ## Steps
