@@ -1,57 +1,47 @@
 #!/bin/bash
 
-path='' #Obscure for security
+path=“/path/to/plink_files/*bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
 
 mkdir logs
 
-# Step 1 : Intermediay Goals
-for  i in 4224 5300 archi; do 
-        plink -bfile ${path}/gsa.${i}.final.v1.1 --remove Samples_to_Remove/${i}.samples --make-bed --output-chr MT --out tmp
-        plink -bfile tmp --merge-x --make-bed --output-chr MT --out XYmerged_${i}
-        rm tmp*
+# Step 1 : Merge pseudo-autosomal regions (XY to X)
+for  bim in ${path} archi; do 
+        plink -bfile ${bim%.*} --merge-x --make-bed --output-chr MT --out ${bim%.*}_XYmerged
 done
-# 760 has no sample to remove
-for  i in 760; do
-        plink -bfile ${path}/gsa.${i}.final.v1.1  --make-bed --output-chr MT --out tmp
-        plink -bfile tmp --merge-x --make-bed --output-chr MT --out XYmerged_${i}
-        rm tmp*
-done
-# 17K is named differently
-plink -bfile ${path}/gsa.17k.final.v1.1.hg19 --make-bed --output-chr MT --out XYmerged_17k --remove Samples_to_Remove/17k.samples
 
 # Step 2 Liftover 
-for array in 17k 4224 5300 760 archi; do 
-        awk '{print "chr" $1, $4-1, $4, $2}' XYmerged_${array}.bim > ${array}_bedfile           ## Produces a bed file of all variants
-        liftOver ${array}_bedfile hg19ToHg38.over.chain.gz ${array}_mapfile ${array}_unmappedfile   ## Produces Map file and unmapped variant file
-        grep ^chr[0-9A-Za-z]*_ ${array}_mapfile | cut -f 4 > ${array}_excludefile    ## Identifies Alternate contig mod A-Z a-z
-        grep -v '^#' ${array}_unmappedfile | cut -f 4 >> ${array}_excludefile              ## Total list of variant to be excluded
-        grep -v ${array}_excludefile ${array}_mapfile > ${array}_mapfile_final          ## Remove excluded variant
+for bim in *_XYmerged.bim; do 
+        awk '{print "chr" $1, $4-1, $4, $2}' ${bim} > ${bim%.*}_bedfile           ## Produces a bed file of all variants
+        liftOver ${bim%.*}_bedfile hg19ToHg38.over.chain.gz ${bim%.*}_mapfile ${bim%.*}_unmappedfile   ## Produces Map file and unmapped variant file
+        grep ^chr[0-9A-Za-z]*_ ${bim%.*}_mapfile | cut -f 4 > ${bim%.*}_excludefile    ## Identifies Alternate contig mod A-Z a-z
+        grep -v '^#' ${bim%.*}_unmappedfile | cut -f 4 >> ${bim%.*}_excludefile              ## Total list of variant to be excluded
+        grep -v ${bim%.*}_excludefile ${bim%.*}_mapfile > ${bim%.*}_mapfile_final          ## Remove excluded variant
 
-        plink --bfile XYmerged_${array} \
-        --exclude ${array}_excludefile \
+        plink --bfile ${bim%.*}_XYmerged \
+        --exclude ${bim%.*}_excludefile \
         --make-bed \
         --not-chr MT \
-        --out tmp_${array}
+        --out tmp_${bim%.*}
 
-        plink --bfile tmp_${array} \
-        --update-chr ${array}_mapfile_final 1 4 \
-        --update-map ${array}_mapfile_final 3 4 \
+        plink --bfile tmp_${bim%.*} \
+        --update-chr ${bim%.*}_mapfile_final 1 4 \
+        --update-map ${bim%.*}_mapfile_final 3 4 \
         --make-bed \
         --output-chr chrMT \
-        --out ${array}_Hg38_Xmerged
+        --out ${bim%.*}_Hg38_Xmerged
 
         mv *.log logs/
-        rm tmp* 
+        rm tmp* # Clean Up.
 done
 
 ## Verification Step ##
 
-for i in *bim; do
-        echo $i ; grep ^chrM $i| wc -l ; grep ^chrX $i| wc -l ; grep ^chrY $i | wc -l ; grep ^chrXY $i | wc -l ;
+for bim in *_Hg38_Xmerged.bim; do
+        echo $i ; grep ^chrM ${bim}| wc -l ; grep ^chrX ${bim}| wc -l ; grep ^chrY ${bim} | wc -l ; grep ^chrXY ${bim} | wc -l ;
 done
  ## check No mitochondria (chrM or chrMT) and no Pseudoautosomal regions coded chrXY
 
-for i in *bim; do
-        grep rs2341354 $i ;
+for bim in *_Hg38_Xmerged.bim; do
+        grep rs2341354 ${bim} ;
 done
 # produces postion corresponding to dbsnp Hg38
