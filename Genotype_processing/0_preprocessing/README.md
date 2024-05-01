@@ -3,7 +3,7 @@ This folder contains the documentation and script used to create CaG input data 
 
 ## Parameters
 ### Software used
-PLINK v1.90b6.21 64-bit (19 Oct 2020) (availlable at https://www.cog-genomics.org/plink/)  
+- [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020)  
 
 ### Input files
 {Bedfiles} - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays**.  
