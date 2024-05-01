@@ -7,7 +7,7 @@ PLINK v1.90b6.21 64-bit (19 Oct 2020) (availlable at https://www.cog-genomics.or
 
 ### Input files
 {Bedfiles} - CaG data v.1.1 in plink .bed format (including .bim .fam companion file) **per Genotyping arrays**.  
-{Removed_samples} -  list of consent retracted individuals **per Genotyping array**  
+{Removed_samples} -  list of consent retracted individuals with #FID IID headers.  
 
 ## Step 
 ### Pre-processing
