@@ -3,34 +3,22 @@
 # Script
 ## Declare Variables
 
-declare -a arrays=("17k" "5300" "4224" "760" "archi")
-path=''
-## Find common ID
-
-comm -1 -2 <(cut -f 2 ${path}/17k_hg38.bim | sort) <(cut -f 2 ${path}/archi_hg38.bim | sort) > temp1.txt
-comm -1 -2 <(cut -f 2 ${path}/4224_hg38.bim| sort) <(cut -f 2 ${path}/5300_hg38.bim | sort) > temp2.txt
-comm -1 -2 <(cut -f 2 ${path}/760_hg38.bim | sort) <( sort temp1.txt) > temp3.txt
-comm -1 -2 <(sort temp3.txt) <(sort temp2.txt) > temp4.txt
-grep -v 'ID ' temp4.txt > tmp
+path=“/path/to/plink_files/*bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
 
 ## Remove chrY
-grep -v chrY tmp > shared.txt
-## Test
-wc -l shared.txt # 481,223
-## Analysis of duplicated samples
-
-Python3 Analysis_Duplicated_samples.py
+grep -v chrY shared.txt > shared_variants.txt
 
 ## Merge 
-for array in "${arrays[@]}" ; do
-        plink --bfile ${path}/${array}_hg38 --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${array}_hg38_shared
+for bim in ${path} ; do
+        plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${bim%.*}_shared
 done
 
-for array in "${arrays[@]}" ; do 
-        plink --bfile ${path}/${array}_hg38 --keep exclude_dup_sample.txt --missing --out ${array}.total
-        plink --bfile ${path}/${array}_hg38_shared --keep exclude_dup_sample.txt --missing --out ${array}.dup
+for bim in ${bim%.*} ; do 
+        plink --bfile ${bim%.*}_hg38 --keep exclude_dup_sample.txt --missing --out ${bim%.*}.total
+        plink --bfile ${bim%.*}_shared --keep exclude_dup_sample.txt --missing --out ${bim%.*}.dup
 done
 
+## 760 genotype array was selected since it had less genotyping position initially.
 
 mv 760_hg38_shared.bed 760_hg38_shared_dup.bed
 mv 760_hg38_shared.bim 760_hg38_shared_dup.bim
@@ -38,8 +26,28 @@ mv 760_hg38_shared.fam 760_hg38_shared_dup.fam
 
 plink --bfile 760_hg38_shared_dup --remove exclude_dup_sample.txt --keep-allele-order --make-bed --output-chr chrMT --out 760_hg38_shared
 
-plink --bfile 17k_hg38_shared --keep-allele-order --output-chr chrMT --bmerge 5300_hg38_shared --out merge_temp
-plink --bfile merge_temp --keep-allele-order --output-chr chrMT  --bmerge 4224_hg38_shared --out merge_temp_2
-plink --bfile merge_temp_2 --keep-allele-order --output-chr chrMT --bmerge archi_hg38_shared --out merge_temp_3
-plink --bfile merge_temp_3 --keep-allele-order --output-chr chrMT --bmerge 760_hg38_shared --out CARTaGENE_hg38_shared
+files=($(ls ${path}))
+base_file="${files[0]%.*}_shared"
+unset files[0] # pop out the first file
+
+output="merge_temp"
+
+# Loop through the remaining files and merge them one by one
+for file in "${files[@]}"
+do
+    # Determine the next output name
+    next_output="${output}_next"
+
+    # Run plink to merge the current base with the next file
+    plink --bfile $base_file --keep-allele-order --output-chr chrMT --bmerge ${file%.*}_shared --out $next_output
+
+    # Update base_file to the new merged file for the next iteration
+    base_file=$next_output
+    output=$next_output
+done
+
+mv ${output}.bed CARTaGENE_hg38_shared.bed
+mv ${output}.bim CARTaGENE_hg38_shared.bim
+mv ${output}.fam CARTaGENE_hg38_shared.fam
+
 rm *temp*
