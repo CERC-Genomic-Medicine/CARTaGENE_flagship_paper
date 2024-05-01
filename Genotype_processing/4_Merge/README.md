@@ -8,12 +8,13 @@ Bedfiles - CaG data v.1.1 in plink .bed format (including .bim .fam companion fi
 
 ### Used Software
 - [python 3.11.5](https://www.python.org/downloads/release/python-3115/)
-  - argparse
-  - pysam-0.22.0
+  - glob
+  - os
+  - pandas 1.4.4
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020)
 
 ### Output files :  
-Bedfile - CaG data v.1.1 in plink .bed format (including .bim .fam companion file)  
+Bed file - CaG data v.1.1 in plink .bed format (including .bim .fam companion file)  
   
 ## Steps  
 While this folder contains multiple scripts.  
