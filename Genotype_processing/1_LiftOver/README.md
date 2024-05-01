@@ -16,3 +16,6 @@ In order to perform liftover, pseudo-autosomal region were merged into their chr
   
 ### Step 2 - LiftOver
 Liftover from hg19 (b37) to hg38 (b38) requiered the identification of corresponding coordinate for each variant accross build to do this, the [LiftOver](https://genome-store.ucsc.edu/) tool was used with the corresponding ressource file [hg19ToHg38.over.chain.gz](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz) for the desired builds. Genotyping files were updated using [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/), Unmapped variants and mapped to alternate contig were withdrawn.
+
+### Step 3 - Validation (optional)
+To validate liftover, the absence of mitochondria (chrM or chrMT) and Pseudoautosomal regions coded chrXY can be evaluated, along with the change in the position of variant rs2341354 (1:918573 (GRCh37) -> 1:983193 (GRCh38))
