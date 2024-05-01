@@ -6,7 +6,7 @@ GRCh38='Homo_sapiens.GRCh38.fa'
 path=“/path/to/plink_files/*bim”  # path to build CAG PLINK binary format's bim file (hg38 build version), each set should contain a .bed .bim .fam file. 
 
 
-## Alignement
+## Step1 - Alignement
 
 for bim in ${path} ; do
         python3 plink2reference.py -b ${bim} -f ${GRCh38} -o ${bim%.*}                             #Produce documents needed for correct strand-flip and REF/ALT alteration
@@ -16,7 +16,7 @@ for bim in ${path} ; do
         rm temp*
 done
 
-## Deduplication
+## Step 2 - Deduplication
 
 for bim in ${path} ; do
         plink --bfile ${bim%.*}_aligned  --list-duplicate-vars                                                      #Identifies duplicate variant Position:REF:ALT
@@ -26,7 +26,7 @@ for bim in ${path} ; do
         rm plink.dupvar plink.frq.counts
 done
 
-## RENAMING SNPs
+## Step 4 - Renaming
 
 for bim in ${path} ; do
         awk '{print $1":"$4":"$5":"$6 , $2}' ${bim%.*}_aligned_dedup.bim > rename.txt                                                   # Create list of old var ID and new var id (chr:pos:REF:ALT)
@@ -34,7 +34,7 @@ for bim in ${path} ; do
         rm rename.txt
 done
 
-## Verification
+## Step4 -Verification
 for bim in ${path} ; do
         echo ${bim%.*} ; grep chrM ${bim%.*}_renamed.bim | wc -l ; grep chrX ${bim%.*}_renamed.bim | wc -l ; 
         grep chrY ${bim%.*}_renamed.bim | wc -l ; grep chrXY ${bim%.*}_renamed.bim | wc -l ; 
