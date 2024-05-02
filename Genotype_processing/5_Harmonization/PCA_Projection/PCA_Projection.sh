@@ -1,12 +1,12 @@
 # Parameters
 ## File
 ### Input file
-HGDP1K='Path/to/file/*vcf.bgz'  # Files from gnomads HGDP+1K dataset
-CaG='Path/to/file/*.bim'        # path to  Merge CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
+HGDP1K="Path/to/file/*vcf.bgz"  # Files from gnomads HGDP+1K dataset
+CaG="Path/to/file/*.bim"        # path to  Merge CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
 ### Filtering Ressources file
-LongLD='Path/to/file'           # Path to long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
-PassedQC='Path/to/file'         # Path to gnomad's HGDP_1KG.PassedQC.id
-Shared='Path/to/file'           # Path to file of CAG genotyping array shared variants  
+LongLD="Path/to/file"           # Path to long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
+PassedQC="Path/to/file"         # Path to gnomad's HGDP_1KG.PassedQC.id
+Shared="Path/to/file"           # Path to file of CAG genotyping array shared variants  
 ## Variables
 ### General
 Threads=5                # Multi Processing   
