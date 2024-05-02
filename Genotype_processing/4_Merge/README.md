@@ -1,4 +1,4 @@
-# Liftover
+# Merge
 This folder contains the scripts and documentation used to Merge the files from the several genotyping arrays into a single CaG v.1.1 dataset. This folder relies on the output of several previous step. See [previous step](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/3_XX_Males_missing). 
 
 
