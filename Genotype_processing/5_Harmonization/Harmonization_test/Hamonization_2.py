@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import pandas as pd
 
-threshold = 0.05
+Pval_threshold = 0.05
 AF_ftest_4PC = "path/to/[file]" # concatenated version of the summary of the tests performed
 
 df= pd.read_csv(AF_ftest_4PC, sep = "\s+", low_memory = False, na_values = ['None'])
