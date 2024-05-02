@@ -12,7 +12,7 @@ bed file - **Merged**  CaG data v.1.1 in plink .bed format (including .bim .fam 
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020)
 - [PLINK v2.00a3LM 64-bit (22 Mar 2022)](www.cog-genomics.org/plink/2.0/)
 - [python 3.11.5](https://www.python.org/downloads/release/python-3115/)
-  - [pandas 1.4.4](https://pandas.pydata.org/docs/)
+  - pandas 1.4.4
   - argparse
   - pysam-0.22.0
   - numpy-1.26.4
