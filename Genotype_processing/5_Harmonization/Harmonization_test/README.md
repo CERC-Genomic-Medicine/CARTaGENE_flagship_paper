@@ -25,7 +25,7 @@ bed file - **Merged**  CaG data v.1.1 in plink .bed format (including .bim .fam 
 ### Step 1 - Variable preparation (Covariate / explanatory)
  - File_prep_1.sh
  - File_prep.py
-1) Convert CaG files to unrelated CaG individuals with [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) and [PLINK v2.00a3LM 64-bit (22 Mar 2022)](www.cog-genomics.org/plink/2.0/), with --king-cutoff
+1) Convert CaG files to unrelated CaG individuals with [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020), and [PLINK v2.00a3LM 64-bit (22 Mar 2022)](www.cog-genomics.org/plink/2.0/)'s --king-cutoff
 - Step Parameter
   - 0.0442 kinship coefficients cut off
 2) Create Genotyping array label files for unrelated individuals, along with sex-specific files
@@ -36,6 +36,10 @@ bed file - **Merged**  CaG data v.1.1 in plink .bed format (including .bim .fam 
 1) test each autosome chromosome, PAR regions, and non-PAR regions (for each sex).
 2) Concatenate the results
 
-### Step 3 - Identify non-harmonious filter
+### Step 3 - Identify non-harmonious variants
  - Hamonization_2.py
 1) Identify variant with P-value < 0.05
+
+### Step 4 - Filter non-harmonious variants
+variant_removal.sh
+1) Filter out previously identified variant using PLINK v2.00a3LM 64-bit (22 Mar 2022)](www.cog-genomics.org/plink/2.0/)'s exclude
