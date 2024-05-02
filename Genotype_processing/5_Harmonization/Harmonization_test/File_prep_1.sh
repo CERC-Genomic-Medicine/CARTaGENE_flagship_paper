@@ -1,22 +1,29 @@
-# Script
-## CARTaGENE unrelated file
-plink --bfile ../Mooser_433651_genotypes_hg38_Merged/CARTaGENE_hg38_shared --keep-allele-order --output-chr chrMT --export vcf bgz id-paste=iid --out CARTaGENE_hg38_shared
+# Parameters
+## File
+### Input file
+CaG="Path/to/file/*.bim"        # path to  Merge CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
+CaG_array="Path/to/file/*.bim"  # path to  not merged CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
+## Variable
+king_cutoff=0.0442
 
-plink2 --vcf CARTaGENE_hg38_shared.vcf.gz --king-cutoff 0.0442 --output-chr chrMT --make-pgen --out CARTaGENE_hg38_shared_unrelated
+## Create files of unrelated CaG individuals
 
-plink2 --pfile CARTaGENE_hg38_shared_unrelated --output-chr chrMT --export vcf bgz id-paste=iid --out CARTaGENE_hg38_shared_unrelated
+plink --bfile ${CaG%.*} --keep-allele-order --output-chr chrMT --export vcf bgz id-paste=iid --out ${CaG%.*}
 
-## Label files
-declare -a arrays=("17k" "5300" "4224" "760" "archi")
+plink2 --vcf ${CaG%.*}.vcf.gz --king-cutoff ${king_cutoff} --output-chr chrMT --make-pgen --out ${CaG%.*}_unrelated
 
-for array in "${arrays[@]}"; do 
-  cut -f 1 -d ' ' ${array}_hg38_shared.fam | sed "s/$/\t${array}/g" >> label;
+plink2 --pfile ${CaG%.*}_unrelated --output-chr chrMT --export vcf bgz id-paste=iid --out ${CaG%.*}_unrelated
+
+## Created Label files
+
+for bim in CaG_array; do 
+  cut -f 1 -d ' ' ${CaG_array%.*}.fam | sed "s/$/\t${CaG_array%.*}.fam/g" >> label;
 done
 
-cut -f 1,5 ../Mooser_433651_genotypes_hg38_Merged/CARTaGENE_hg38_shared.fam | grep 2$ | cut -f 1 > female.filter
-cut -f 1,5 ../Mooser_433651_genotypes_hg38_Merged/CARTaGENE_hg38_shared.fam | grep 1$ | cut -f 1 > male.filter
-cut -f 1  CARTaGENE_hg38_shared_unrelated.king.cutoff.in.id >  CARTaGENE_hg38_shared_unrelated.king.cutoff.in.iid
+cut -f 1,5 ${CaG%.*}.fam | grep 2$ | cut -f 1 > female.filter
+cut -f 1,5 ${CaG%.*}.fam | grep 1$ | cut -f 1 > male.filter
+cut -f 1  ${CaG%.*}_unrelated.king.cutoff.in.id >  ${CaG%.*}_unrelated.king.cutoff.in.iid
 
-grep -f CARTaGENE_hg38_shared_unrelated.king.cutoff.in.iid label > label_unrelated
+grep -f ${CaG%.*}_unrelated.king.cutoff.in.iid label > label_unrelated
 grep -f male.filter label_unrelated > label_unrelated_male
 grep -f female.filter label_unrelated > label_unrelated_female
