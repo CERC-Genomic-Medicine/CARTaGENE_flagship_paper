@@ -4,7 +4,7 @@
 CaG="Path/to/file/*.bim"        # path to  Merge CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
 CaG_array="Path/to/file/*.bim"  # path to  not merged CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
 ## Variable
-king_cutoff=0.0442
+king_cutoff=0.0442              # kinship coefficients cut off, 3rd degree realtives
 
 ## Create files of unrelated CaG individuals
 
