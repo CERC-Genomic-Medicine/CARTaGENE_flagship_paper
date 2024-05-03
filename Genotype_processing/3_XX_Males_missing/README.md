@@ -1,5 +1,6 @@
 # XX males missing
-This folder contains the code to address the male heterozygotes in position which should be haploid (i.e. non-PAR)
+This folder contains the code to address the male heterozygotes in position which should be haploid (i.e. non-PAR). This folder's script relies on reference aligned input dataset. this was created in [Preprocesssing](https://github.com/CERC-Genomic-Medicine/CARTaGENE_flagship_paper/tree/main/Genotype_processing/2_Reference_Alignement). 
+
 
 ## Parameter
 ### Input files
