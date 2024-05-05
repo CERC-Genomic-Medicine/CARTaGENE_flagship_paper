@@ -3,23 +3,40 @@
 # Script
 ## Declare Variables
 
-path=“/path/to/plink_files/*bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
+path=“/scratch/vct/CARTaGENE_v1.1/Mooser_433651_genotypes_hg38_ref_XYfixed/*_hg38.bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
+output_name="CaG"
+threads=5
 
-## Remove chrY
-grep -v chrY shared.txt > shared_variants.txt
+mkdir Merger; cd Merger
 
-## Merge 
+nfile=$(ls -lh ${path} | wc -l)
+awk '{print $2}' $(ls ${path}) | sort | uniq -c | awk -v n="$nfile" '$1 == n {print $2}' | grep -v 'chrY' - > shared.txt
 for bim in ${path} ; do
-        plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${bim%.*}_shared
+  filename=${bim##*/}
+  plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${filename%.*}_shared --threads ${threads}
+done
+awk '{print $1}' *_shared.fam | sort | uniq -c | awk '$1 > 1 n {print $2,$2}' > Samples_to_exclude.txt
+sed -i '1i#FID IID' Samples_to_exclude.txt
+list_files_order=$(wc -l *_shared.fam | sort -n | awk '{print $2}' | head -n -1)
+
+for file in $list_files_order
+do
+  plink --bfile ${file%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${file%.*}_temp
+  grep -v ${file%.*}.fam Samples_to_exclude.txt > tmp
+  mv tmp Samples_to_exclude.txt
+  if cmp -s ${file%.*}.fam ${file%.*}_temp.fam; then
+    rm *temp*
+  else
+    rm ${file%.*}.fam ${file%.*}_shared.bed ${file%.*}.bim
+    mv ${file%.*}_temp.fam ${file%.*}.fam
+    mv ${file%.*}_temp.bed ${file%.*}.bed
+    mv ${file%.*}_temp.bim ${file%.*}.bim
+  fi
+  if [$(wc -l exclude_dup_sample.txt ) -eq 1]; then
+    break
+  fi
 done
 
-## 760 genotype array was selected since it had less genotyping position initially.
-
-mv 760_hg38_shared.bed 760_hg38_shared_dup.bed
-mv 760_hg38_shared.bim 760_hg38_shared_dup.bim
-mv 760_hg38_shared.fam 760_hg38_shared_dup.fam
-
-plink --bfile 760_hg38_shared_dup --remove exclude_dup_sample.txt --keep-allele-order --make-bed --output-chr chrMT --out 760_hg38_shared
 
 files=($(ls ${path}))
 base_file="${files[0]%.*}_shared"
@@ -34,15 +51,15 @@ do
     next_output="${output}_next"
 
     # Run plink to merge the current base with the next file
-    plink --bfile $base_file --keep-allele-order --output-chr chrMT --bmerge ${file%.*}_shared --out $next_output
+    plink --bfile $base_file --keep-allele-order --output-chr chrMT --bmerge ${file%.*}_shared --threads ${threads} --out $next_output
 
     # Update base_file to the new merged file for the next iteration
     base_file=$next_output
     output=$next_output
 done
 
-mv ${output}.bed CARTaGENE_hg38_shared.bed
-mv ${output}.bim CARTaGENE_hg38_shared.bim
-mv ${output}.fam CARTaGENE_hg38_shared.fam
+mv ${output}.bed ${output_name}.bed
+mv ${output}.bim ${output_name}.bim
+mv ${output}.fam ${output_name}.fam
 
 rm *temp*
