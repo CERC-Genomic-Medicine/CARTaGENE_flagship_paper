@@ -10,7 +10,6 @@ threads=5
 mkdir Merger; cd Merger
 
 # Find List of overlapping individuals
-sed -i '1i#FID IID' Samples_to_exclude.txt
 # Order files per nb of variants
 
 list_files_order=$(wc -l ${path} | sort -n | awk '{print $2}' | head -n -1)
@@ -19,13 +18,13 @@ list_files_order=$(wc -l ${path} | sort -n | awk '{print $2}' | head -n -1)
 # Iter over list to remove duplicate individual (removing individuals form list after each)
 for i in ${!list_files_order[@]}
 do
-  filename=${file[i]##*/}
+  filename=${list_files_order[i]##*/}
   awk '{print $1}' $(ls ${list_files_order%.*}.fam) | sort | uniq -c | awk '$1 > 1 n {print $2,$2}' > Samples_to_exclude.txt
+  sed -i '1i#FID IID' Samples_to_exclude.txt
   if [$(wc -l exclude_dup_sample.txt ) -eq 1]; then # If there is no longer any duplicates (1st line FID IID)
       break
   else
-  sed -i '1i#FID IID' Samples_to_exclude.txt
-  plink --bfile ${file%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${filename%.*}
+  plink --bfile ${list_files_order%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${filename%.*}
   list_files_order[i]="${list_files_order[i]##*/}"
   fi
 done
