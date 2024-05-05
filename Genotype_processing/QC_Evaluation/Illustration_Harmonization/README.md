@@ -7,12 +7,12 @@ Result can be found at [Pheweb](https://cerc-genomic-medicine.ca/pheweb/cartagen
 ### Software used
 - [PLINK v2.00a3LM 64-bit (22 Mar 2022)](www.cog-genomics.org/plink/2.0/)
 - [python 3.11.5](https://www.python.org/downloads/release/python-3115/)
-- pandas 2.2.1
-- numpy 1.22.2
-- glob
-- os
-- subprocess
-- matplotlib 3.5.1
+  - pandas 2.2.1
+  - numpy 1.22.2
+  - glob
+  - os
+  - subprocess
+  - matplotlib 3.5.1
 ### Files 
 - Phase_file - File detailing the recruitement phase of each sample
 CaG_unmerged - path to **FOLDER** containing the genotyping arrays PLINK binary format
