@@ -144,6 +144,7 @@ def aggregate_ids_with_glob(path, list_pattern):
 
 if __name__ == '__main__':
 	# READ files
+	## Step 1
 	phases = pd.read_csv(Phase_file,usecols=['IID','PHASE'])
 	phase_list = phases['PHASE'].unique()
 	unrelated=pd.read_csv('/scratch/vct/CARTaGENE_v1.1/Mooser_433651_genotypes_hg38_Harmonized_dataset/CARTaGENE_hg38_shared_unrelated.king.cutoff.in.id')
@@ -163,9 +164,9 @@ if __name__ == '__main__':
 	final_matrix.insert(loc=0, column='FID', value=final_matrix.index)
 	final_matrix.to_csv('Array_Phase.pheno', sep = '\t',na_rep='NA', index=False)
 	### Create PCA covariates
-	subprocess.run('plink2 --bfile ' + CaG_merged_unfiltered[:-4] + ' --pca 5 --out PCA_covar --threads ' + threads, shell=True, check=True, stderr=subprocess.PIPE, text=True)
+	subprocess.run(f"plink2 --bfile {CaG_merged_unfiltered[:-4]} --keep {Unrelated_individuals} --pca {PC} --out PCA_covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
 	### Association Testing
-	subprocess.run('plink2 --bfile ' + CaG_merged_unfiltered[:-4] + ' --pheno Array_Phase.pheno --1 --covar PCA_covar.eigenvec --glm hide-covar --threads ' + threads, shell=True, check=True, stderr=subprocess.PIPE, text=True)
+	subprocess.run(f"plink2 --bfile ' + CaG_merged_unfiltered[:-4]} --keep {Unrelated_individuals} --pheno Array_Phase.pheno --1 --covar PCA_covar.eigenvec --glm hide-covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
 	
 	### Process each association file into a comparison figure
 	file_pattern = "plink2.*.glm.logistic.hybrid"
