@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='pvp plot')
 parser.add_argument('-i', dest='freq', type=str,nargs='+', help='output from compare_ancestry_adjusted_af.py')
 parser.add_argument('-n', dest='n', type=int, help='number total of test')
 parser.add_argument('-t', dest='title', type=str, help='Title (use quotation for multiple words)')
+parser.add_argument('-A', dest='Array' , type=str,nargs='+', help='list Arrays (space delimited')
 parser.add_argument('-out', dest='out', type=str, help='Output names')
 
 args = parser.parse_args()
@@ -20,8 +21,7 @@ df=pd.concat([pd.read_csv(i, sep = "\s+", header=0,index_col='VARIANT') for i in
 df=df[df["LRT_PVALUE"] != "None"]
 Arrays=df.filter(like='AF')
 Arrays.columns=[i.replace("AF_","") for i in Arrays.columns]
-Arrays=Arrays[["17k", "4224", "760", "archi", "5300"]]
-Arrays.columns=["17K", "4K", "760", "Archi", "5K"]
+Arrays=Arrays[args.Array]
 Arrays2=Arrays[pd.to_numeric(df["FTEST_PVALUE"])<=(0.05/args.n)]
 Arrays1=Arrays[pd.to_numeric(df["FTEST_PVALUE"])>(0.05/args.n)]
 
