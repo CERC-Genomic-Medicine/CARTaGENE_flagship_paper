@@ -3,42 +3,54 @@
 # Script
 ## Declare Variables
 
-path=“/scratch/vct/CARTaGENE_v1.1/Mooser_433651_genotypes_hg38_ref_XYfixed/*_hg38.bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
+path=“path/to/file/*.bim”  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
 output_name="CaG"
 threads=5
 
 mkdir Merger; cd Merger
 
-nfile=$(ls -lh ${path} | wc -l)
-awk '{print $2}' $(ls ${path}) | sort | uniq -c | awk -v n="$nfile" '$1 == n {print $2}' | grep -v 'chrY' - > shared.txt
-for bim in ${path} ; do
-  filename=${bim##*/}
-  plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${filename%.*}_shared --threads ${threads}
-done
-awk '{print $1}' *_shared.fam | sort | uniq -c | awk '$1 > 1 n {print $2,$2}' > Samples_to_exclude.txt
+# Find List of overlapping individuals
+awk '{print $1}' $(ls ${filenames}) | sort | uniq -c | awk '$1 > 1 n {print $2,$2}' > Samples_to_exclude.txt
 sed -i '1i#FID IID' Samples_to_exclude.txt
-list_files_order=$(wc -l *_shared.fam | sort -n | awk '{print $2}' | head -n -1)
+# Order files per nb of variants
 
+list_files_order=$(wc -l ${path} | sort -n | awk '{print $2}' | head -n -1)
+
+# Iter over list to remove duplicate individual (removing individuals form list after each)
 for file in $list_files_order
 do
-  plink --bfile ${file%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${file%.*}_temp
-  grep -v ${file%.*}.fam Samples_to_exclude.txt > tmp
+  filename=${file##*/}
+  plink --bfile ${file%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${filename%.*}_temp
+  grep -v ${file%.*}.fam Samples_to_exclude.txt > tmp ## Remove any duplicate just removed from list
   mv tmp Samples_to_exclude.txt
-  if cmp -s ${file%.*}.fam ${file%.*}_temp.fam; then
+  if cmp -s ${file%.*}.fam ${filename%.*}_temp.fam; then
     rm *temp*
   else
-    rm ${file%.*}.fam ${file%.*}_shared.bed ${file%.*}.bim
     mv ${file%.*}_temp.fam ${file%.*}.fam
     mv ${file%.*}_temp.bed ${file%.*}.bed
     mv ${file%.*}_temp.bim ${file%.*}.bim
   fi
-  if [$(wc -l exclude_dup_sample.txt ) -eq 1]; then
+  if [$(wc -l exclude_dup_sample.txt ) -eq 1]; then # If there is no longer any duplicates (1st line FID IID)
     break
   fi
 done
 
+## Set the working files to current directory (updated files)
+for i in "${!list_files_order[@]}"; do
+    # This loop removes everything after the first dot encountered
+    filenames[i]="${list_files_order[i]##*/}"
+done
 
-files=($(ls ${path}))
+
+# Find variant present in all arrays
+nfile=$(ls -lh ${filenames} | wc -l)
+awk '{print $2}' $(ls ${filenames}) | sort | uniq -c | awk -v n="$nfile" '$1 == n {print $2}' | grep -v 'chrY' - > shared.txt
+# Extract variant
+for bim in ${filenames} ; do
+  plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${bim%.*}_shared --threads ${threads}
+done
+
+files=($(ls ${filenames}))
 base_file="${files[0]%.*}_shared"
 unset files[0] # pop out the first file
 
