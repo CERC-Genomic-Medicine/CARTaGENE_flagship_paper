@@ -3,7 +3,7 @@
 # Script
 ## Declare Variables
 
-path=path/to/files/*.fam  # path to CAG PLINK binary format's bim file, each set should contain a .bed .bim .fam file.
+path=path/to/files/*.fam  # path to CAG PLINK binary format's fam file, each set should contain a .bed .bim .fam file.
 output_name="CaG"
 threads=5
 
@@ -13,18 +13,17 @@ mkdir Merger; cd Merger
 # Order files per nb of variants
 
 
-
+# order file list per N samples (in increasing order)
 list_files_order=($(wc -l ${path} | sort -n | awk '{print $2}' | head -n -1))
 
-
-# Iter over list to remove duplicate individual (removing individuals form list after each)
+# Iter over list to remove duplicate individual (reforming list after each
 for iter in ${!list_files_order[@]}
 do
   filename=${list_files_order[iter]##*/}
   awk '{print $1}' $(ls ${list_files_order[@]}) | sort | uniq -c | awk '$1 > 1 {print $2,$2}' > Samples_to_exclude.txt
   sed -i '1i#FID IID' Samples_to_exclude.txt
   head  Samples_to_exclude.txt
-  if [ $(wc -l < Samples_to_exclude.txt) -eq 0 ]; then # If there is no longer any duplicates (1st line FID IID)
+  if [ $(wc -l < Samples_to_exclude.txt) -eq 0 ]; then # End if list is empty
       break
   else
     plink --bfile ${list_files_order[iter]%.*} --remove Samples_to_exclude.txt --keep-allele-order --make-bed --output-chr chrMT --threads ${threads} --out ${filename%.*}
@@ -32,16 +31,14 @@ do
   fi
 done
 
-#create bim list
+#Change to Bim list
 
 for iter in ${!list_files_order[@]}
 do
 list_files_order[iter]=${list_files_order[iter]%.*}.bim
 done
 
-echo ${list_files_order[@]}
-
-# Find variant present in all arrays
+# Find variant present in all arrays variant count = N array
 nfile=$(ls -lh ${list_files_order[@]} | wc -l)
 awk '{print $2}' $(ls ${list_files_order[@]}) | sort | uniq -c | awk -v n="$nfile" '$1 == n {print $2}' | grep -v 'chrY' - > shared.txt
 # Extract variant
@@ -50,8 +47,8 @@ for bim in ${list_files_order[@]} ; do
   plink --bfile ${bim%.*} --extract shared.txt  --keep-allele-order --make-bed --output-chr chrMT --out ${out%.*}_shared --threads ${threads}
 done
 
+# Redirect
 for i in "${!list_files_order[@]}"; do
-    # ensure new redirect 
     list_files_order[i]="${list_files_order[i]##*/}_shared"
 done
 
