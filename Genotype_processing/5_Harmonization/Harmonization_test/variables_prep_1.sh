@@ -17,7 +17,7 @@ plink2 --pfile ${CaG%.*}_unrelated --output-chr chrMT --export vcf bgz id-paste=
 ## Created Label files
 
 for bim in CaG_array; do 
-  cut -f 1 -d ' ' ${CaG_array%.*}.fam | sed "s/$/\t${CaG_array%.*}.fam/g" >> label;
+  cut -f 1 -d ' ' ${bim%.*}.fam | sed "s/$/\t${bim%.*}.fam/g" >> label;
 done
 
 cut -f 1,5 ${CaG%.*}.fam | grep 2$ | cut -f 1 > female.filter
