@@ -9,6 +9,7 @@ PassedQC="Path/to/file"         # Path to gnomad's HGDP_1KG.PassedQC.id
 Shared="Path/to/file"           # Path to file of CAG genotyping array shared variants  
 ## Variables
 ### General
+output='CaG'
 Threads=5                # Multi Processing   
 ind_trace_batch=3000     # Number of individual per batch for trace
 ### Filter HGDP + 1KG
@@ -32,7 +33,7 @@ do
   bcftools view -fPASS -q${min_allelefreq} -Q${max_allelefreq} -i "F_MISSING < ${MISSING_CUTOFF}" -S ${PassedQC} -R shared.bed ${vcf} -Oz -o ${vcf%.*}.gz --threads ${Threads}
 done
 
-bcftools concat ${vcf%.*}.gz -n -Oz -o gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz  # Concatenate files
+bcftools concat ${HGDP1K%.*}.vcf.gz -n -Oz -o gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz  # Concatenate files
 plink2 --vcf gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz --indep-pairwise ${window} ${step} ${Rsq} --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune --set-all-var-ids '@:#:\$r:\$a' --new-id-max-allele-len 145 --threads 5 # ID var to be pruned
 plink2 --vcf gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz --set-all-var-ids 'chr@:#:$r:$a' --new-id-max-allele-len 145 --threads ${Threads}  --exclude gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune.prune.out --make-pgen --out tmp # Remove pruned variants
 plink2 --pfile tmp --exclude bed0 ${LongLD} --export vcf bgz id-paste=iid --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune # remove long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
@@ -60,5 +61,5 @@ for file in ${files} ; do
 trace -s ${file} -g gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune.geno -c ${base_file}.RefPC.coord -o ${file%.*} -k 20 -K 20
 done
 
-cat ${base_file} > CARTaGENE.ProPC.coord
-for file in ${files} ; do sed 1d ${file%.*}.ProPC.coord >>CARTaGENE.ProPC.coord ; done
+cat ${base_file} > ${output}.ProPC.coord
+for file in ${files} ; do sed 1d ${file%.*}.ProPC.coord >>${output}.ProPC.coord ; done
