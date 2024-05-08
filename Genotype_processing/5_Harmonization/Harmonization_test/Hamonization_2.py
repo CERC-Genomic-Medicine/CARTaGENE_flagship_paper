@@ -9,4 +9,4 @@ df = df[~df.LRT_PVALUE.isna()]
 n = len(df)
 pval_threshold = threshold / n
 print(n, pval_threshold) #483001 1.0351945441106748e-07
-df[df.LRT_PVALUE<=(0.05/len(df.LRT_PVALUE))].drop_duplicates(subset='VARIANT').to_csv('Variants_failing_ancestry_LRTtest.txt',index=False,header=False, columns=["VARIANT"])
+df[df.LRT_PVALUE<=(Pval_threshold/len(df.LRT_PVALUE))].drop_duplicates(subset='VARIANT').to_csv('Variants_failing_ancestry_LRTtest.txt',index=False,header=False, columns=["VARIANT"])
