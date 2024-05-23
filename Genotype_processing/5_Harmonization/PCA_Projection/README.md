@@ -7,9 +7,7 @@ Bed file - Merged CaG data v.1.1 in plink .bed format (including .bim .fam compa
 Shared Variant files - List of shared variant in the CaG data in chr:pos:REF:ALT format.
 Gnomad dataset 
 - VCF files of [gnomAD's HGDP+1KG dataset v3.1.2](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg)  
-- list of QC passing individuals    
-
-Long-Range LD bed file - long range regions as defined in [Anderson et al. 2010](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/) availlable in hg38 [here](https://github.com/CERC-Genomic-Medicine/Regenie_nextflow/blob/3a7f3e3bb5e5a9cbc8a075b54917c423237cdc28/util/Low_complexity_regions/HG38.Anderson2010.bed.gz)  
+- list of QC passing individuals     
 
 ### Used Software
 - trace [Laser v.1.03](https://csg.sph.umich.edu/chaolong/LASER/)
@@ -41,9 +39,8 @@ This step remove low quality/redundant genomic elements and sample with low qual
      - window size 1000
      - step size 100
      - r^2 threshold 0.9
-4) Remove long range Linkage Disequilibrium unsing plink2's exclude
-   - Step Parameter
-     - long range regions as defined in [Anderson et al. 2010](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/) availlable in hg38 [here](https://github.com/CERC-Genomic-Medicine/Regenie_nextflow/blob/3a7f3e3bb5e5a9cbc8a075b54917c423237cdc28/util/Low_complexity_regions/HG38.Anderson2010.bed.gz)  
+4) Remove Linkage Disequilibrium unsing plink2's exclude
+ 
 5) Convert to geno/site format used by laser, using vcf2geno
 
 ### Step 3 - Process CaG dataset
