@@ -4,7 +4,6 @@
 HGDP1K="Path/to/file/*vcf.bgz"  # Files from gnomads HGDP+1K dataset
 CaG="Path/to/file/*.bim"        # path to  Merge CAG PLINK binary format's bim file, set should contain a .bed .bim .fam file.
 ### Filtering Ressources file
-LongLD="Path/to/file"           # Path to long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
 PassedQC="Path/to/file"         # Path to gnomad's HGDP_1KG.PassedQC.id
 Shared="Path/to/file"           # Path to file of CAG genotyping array shared variants  
 ## Variables
@@ -36,7 +35,7 @@ done
 bcftools concat ${HGDP1K%.*}.vcf.gz -n -Oz -o gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz  # Concatenate files
 plink2 --vcf gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz --indep-pairwise ${window} ${step} ${Rsq} --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune --set-all-var-ids '@:#:\$r:\$a' --new-id-max-allele-len 145 --threads 5 # ID var to be pruned
 plink2 --vcf gnomad.genomes.v3.1.2.hgdp_tgp.vcf.gz --set-all-var-ids 'chr@:#:$r:$a' --new-id-max-allele-len 145 --threads ${Threads}  --exclude gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune.prune.out --make-pgen --out tmp # Remove pruned variants
-plink2 --pfile tmp --exclude bed0 ${LongLD} --export vcf bgz id-paste=iid --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune # remove long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
+plink2 --pfile tmp --export vcf bgz id-paste=iid --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune # remove long range linkage regions as defined in Anderson et al. 2010 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3861250/)
 bcftools index gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune.vcf.gz
 vcf2geno --inVcf gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune.vcf.gz --out gnomad.genomes.v3.1.2.hgdp_tgp.LD_prune # convert to geno/site format
 
