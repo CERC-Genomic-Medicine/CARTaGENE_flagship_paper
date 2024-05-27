@@ -11,7 +11,7 @@ this folder contains the nextflow pipeline used to LiftOver Merge dans harmonize
 3) Set haploid heterozygotes to missing
 4) Deduplicating samples and merge
 5) Test variants' agreement accross array using ancestry ajusted LRT
-	5.1) Using [Lazer](https://csg.sph.umich.edu/chaolong/LASER/)'s trace program perform PCA projection
+	5.1) Using [Laser](https://csg.sph.umich.edu/chaolong/LASER/)'s trace program perform PCA projection
 	5.2) Use the resulting Projection to ajust ancestry within test
 
 ## Necessary software
