@@ -20,5 +20,5 @@ This folder contains the files used to produce 2 x23 chromosome specific vcf rep
 
 ## Parameters (used in CaG flagship)
 
-- Reference ([TOPMed freeze 8](https://www.nature.com/articles/s41586-021-03205-y)
+- Reference ([TOPMed freeze 8](https://www.nature.com/articles/s41586-021-03205-y) )
 - Threshold (0.2)
