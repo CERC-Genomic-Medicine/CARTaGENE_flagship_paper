@@ -71,7 +71,7 @@ process impute {
     tuple val(ref_prefix), path(study_vcf), path(study_vcf_index), path(ref_msav), path(ref_msav_info), path(ref_msav_info_index), path(ref_msav_info_header)
 
     output:
-    tuple val(ref_prefix), path("*.imputed.vcf.gz"), path("*.imputed.vcf.gz.tbi")
+    tuple val(ref_prefix), path("${ref_prefix}.dose.vcf.gz"), path("${ref_prefix}.dose.vcf.gz.tbi"), path("${ref_prefix}.empiricalDose.vcf.gz"), path("${ref_prefix}.empiricalDose.vcf.gz.tbi")
 
     publishDir "imputed", mode: "copy"
 
@@ -81,25 +81,26 @@ process impute {
     if [ "${ref_prefix}" = "chrX_par1" ]; then
        bcftools view ${study_vcf} ${params.par1_region} -Ob -o temp.bcf
        bcftools index temp.bcf
-       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.bcf
+       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.dose.bcf -e ${ref_prefix}.empiricalDose.vcf.gz
     elif [ "${ref_prefix}" = "chrX_par2" ]; then
        bcftools view ${study_vcf} ${params.par2_region} -Ob -o temp.bcf
        bcftools index temp.bcf
-       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.bcf
+       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.dose.bcf -e ${ref_prefix}.empiricalDose.vcf.gz
     elif [ "${ref_prefix}" = "chrX_nonpar" ]; then
        bcftools view -t ^${params.par1_region},${params.par2_region} ${study_vcf} -Ob -o temp.bcf
        bcftools index temp.bcf
-       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.bcf
+       ${params.minimac4} ${ref_msav} temp.bcf -t 8 -f GT,DS,HDS -o imputed_noinfo.dose.bcf -e ${ref_prefix}.empiricalDose.vcf.gz
     else
-       ${params.minimac4} ${ref_msav} ${study_vcf} -t 8 -f GT,DS,HDS -o imputed_noinfo.bcf
+       ${params.minimac4} ${ref_msav} ${study_vcf} -t 8 -f GT,DS,HDS -o imputed_noinfo.dose.bcf -e ${ref_prefix}.empiricalDose.vcf.gz
     fi
     
     # Index
-    bcftools index imputed_noinfo.bcf
+    bcftools index imputed_noinfo.dose.bcf
+    bcftools index -t ${ref_prefix}.empiricalDose.vcf.gz
 
     # Add back INFO fields and relevant meta-lines for the SVs
-    bcftools annotate -a ${ref_msav_info} -h ${ref_msav_info_header} -c CHROM,POS,~ID,REF,ALT,INFO/END,INFO/SVTYPE,INFO/SVLEN imputed_noinfo.bcf -Oz -o ${ref_prefix}.imputed.vcf.gz
-    bcftools index -t ${ref_prefix}.imputed.vcf.gz
+    bcftools annotate -a ${ref_msav_info} -h ${ref_msav_info_header} -c CHROM,POS,~ID,REF,ALT,INFO/END,INFO/SVTYPE,INFO/SVLEN imputed_noinfo.dose.bcf -Oz -o ${ref_prefix}.dose.vcf.gz
+    bcftools index -t ${ref_prefix}.dose.vcf.gz
     """
 }
 
