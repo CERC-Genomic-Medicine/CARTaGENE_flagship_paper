@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
 ### Input file
-Phase_file = ""                             # File detailing the recruitement phase of each sample
-CaG_unmerged = ""                                     # path to **FOLDER** containing the genotyping arrays PLINK binary format
-Variants = ""
-CaG_merged_unfiltered = ''   #path to CaG unfiltered merged PLINK binary format (with bed bim fam files)
-Unrelated_individuals = ""                  # path to file containing the list of unrelated individuals (obtained in step 5 Harmonization
-Array_list=["archi","760","5300","4224","17k"]
+phase_file = ""                             # File detailing the recruitement phase of each sample
+cag_unmerged = ""                                     # path to **FOLDER** containing the genotyping arrays PLINK binary format
+variants = ""
+cag_merged_unfiltered = ''   #path to CaG unfiltered merged PLINK binary format (with bed bim fam files)
+unrelated_individuals = ""                  # path to file containing the list of unrelated individuals (obtained in step 5 Harmonization
+array_list=["archi","760","5300","4224","17k"]
 PC = '5' 																# number of PCS as covariates
 threads = '5'
 
@@ -145,12 +145,12 @@ def aggregate_ids_with_glob(path, list_pattern):
 if __name__ == '__main__':
 	# READ files
 	## Step 1
-	phases = pd.read_csv(Phase_file,usecols=['IID','PHASE'])
+	phases = pd.read_csv(phase_file,usecols=['IID','PHASE'])
 	phase_list = phases['PHASE'].unique()
 	unrelated=pd.read_csv('/scratch/vct/CARTaGENE_v1.1/Mooser_433651_genotypes_hg38_Harmonized_dataset/CARTaGENE_hg38_shared_unrelated.king.cutoff.in.id')
 
 	# Read all Arrays
-	Array =  aggregate_ids_with_glob(CaG_unmerged, Array_list)
+	Array =  aggregate_ids_with_glob(cag_unmerged, array_list)
 	matrix = create_comparison_df(Array,phases)
 
 	matrix=matrix.loc[unrelated.iloc[:,0],]
@@ -164,9 +164,9 @@ if __name__ == '__main__':
 	final_matrix.insert(loc=0, column='FID', value=final_matrix.index)
 	final_matrix.to_csv('Array_Phase.pheno', sep = '\t',na_rep='NA', index=False)
 	### Create PCA covariates
-	subprocess.run(f"plink2 --bfile {CaG_merged_unfiltered[:-4]} --keep {Unrelated_individuals} --pca {PC} --out PCA_covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
+	subprocess.run(f"plink2 --bfile {cag_merged_unfiltered[:-4]} --keep {unrelated_individuals} --pca {PC} --out PCA_covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
 	### Association Testing
-	subprocess.run(f"plink2 --bfile ' + CaG_merged_unfiltered[:-4]} --keep {Unrelated_individuals} --pheno Array_Phase.pheno --1 --covar PCA_covar.eigenvec --glm hide-covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
+	subprocess.run(f"plink2 --bfile ' + cag_merged_unfiltered[:-4]} --keep {Unrelated_individuals} --pheno Array_Phase.pheno --1 --covar PCA_covar.eigenvec --glm hide-covar --threads {threads}", shell=True, check=True, stderr=subprocess.PIPE, text=True)
 	
 	### Process each association file into a comparison figure
 	file_pattern = "plink2.*.glm.logistic.hybrid"
@@ -180,7 +180,7 @@ if __name__ == '__main__':
 		n1 = int(sum(final_matrix[comparison]==0)) ## N in comparison
 		n2 = int(sum(final_matrix[comparison]==1)) ## N in comparison
 		fig, axs = plt.subplots(1, 2, constrained_layout=True,figsize=(16,5))
-		manhatten(axs[0],file_path,Variants,Array1,f"{n1:,}", Array2 ,f"{n2:,}")
-		manhatten_f(axs[1],file_path,Variants,"LRT_PVALUE", Array1 ,f"{n1:,}", Array2 ,f"{n2:,}")
+		manhatten(axs[0],file_path,variants,Array1,f"{n1:,}", Array2 ,f"{n2:,}")
+		manhatten_f(axs[1],file_path,variants,"LRT_PVALUE", Array1 ,f"{n1:,}", Array2 ,f"{n2:,}")
 		plt.suptitle(f"{Array1} (N={n1:,}) vs {Array2} (N={n2:,})", fontsize=12)
 		fig.savefig(f"{comparison}.png", dpi=fig.dpi)
