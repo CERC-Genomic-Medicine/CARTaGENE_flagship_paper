@@ -4,10 +4,6 @@
 
 this folder contains the nextflow pipeline used to LiftOver Merge dans harmonize the CARTaGENE data (N=29,333 merged final version). The pipelines were run using SLURM job scheduler on the [Digital Research Alliance of Canada](https://alliancecan.ca/en) high performance compute clusters. The pipeline is a single script composed of multiple steps.
 
-## Workflow
-![workflow diagram](workflow.png)
-
-
 ## Workflow order
 
 ### Step 1. LiftOver from b37 to b38
