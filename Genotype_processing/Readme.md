@@ -4,8 +4,11 @@
 
 This folder contains the nextflow pipeline used to LiftOver, Merge and harmonize the CARTaGENE data (N=29,333 merged final version). This folder was conceived to documents the preparation of CARTaGENE (CaG) data for imputation. 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 1b06d2172488ea895354d9e2dd0827d251912442
 ## Workflow order
 
 ```diff
