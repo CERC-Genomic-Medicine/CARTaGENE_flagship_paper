@@ -2,10 +2,43 @@
 
 nextflow.enable.dsl = 2
 
-process S1_Testing {
-  label 'Testing'
+
+// Pre-requisites/assumptions:
+// 1. Script assumes ploidy does not requiere correction
+// 2. Make sure that bcftools is installed/loaded on your system
+
+// minimal execution:
+// nextflow run TOPMed_prep.nf --vcf "path/to/file.vcf.gz"  --ref "path/to/file.vcf.gz"  --name "CaG" --OutDir "path/to/dir"
+
+
+//Files
+params.vcf="path/to/file.vcf.gz"            // vcf of the cohort to be imputed
+params.ref="path/to/file.vcf.gz"           // vcf of the TOPMed bravo freeze (assumes a .tbi index is present
+params.OutDir="path/to/dir"          // output directory
+params.name='CaG'                       // name of project
+
+
+//Parameters
+params.Batch_length=25000           // number of individual per batch (currently TOPMed server has a 25000 individual limit)
+params.Threshold=0.2                 // Maximum difference in frequency
+
+
+process testing {
+  label 'testing'
   cache 'lenient'
   scratch false
+
+  maxRetries 3
+  scratch false
+  errorStrategy 'retry'
+  errorStrategy { task.exitStatus == 137 || task.exitStatus == 143 ? 'retry' : 'terminate' }
+  
+  executor "slurm"
+  clusterOptions "--account=rrg-vmooser"
+
+  cpus 1
+  memory { 5.GB * task.attempt }
+  time "4h"
 
   input:
   path(vcf)
@@ -32,10 +65,27 @@ process S1_Testing {
   """
 }
 
-process S2_Chromosome_split {
-  label 'Chromosome_split'
+process chromosome_split {
+  label 'chromosome_split'
   cache 'lenient'
   scratch true
+
+  label 'testing'
+  cache 'lenient'
+  scratch false
+
+  maxRetries 3
+  scratch false
+  errorStrategy 'retry'
+  errorStrategy { task.exitStatus == 137 || task.exitStatus == 143 ? 'retry' : 'terminate' }
+  
+  executor "slurm"
+  clusterOptions "--account=rrg-vmooser"
+
+  cpus 1
+  memory { 5.GB * task.attempt }
+  time "4h"
+
 
   input:
   tuple path(batch), path(vcf), path(index)
@@ -43,7 +93,7 @@ process S2_Chromosome_split {
   output:
   tuple path("*.vcf.gz"), path("*.vcf.gz.csi"), emit : batch1
   
-  publishDir "${params.OutDir}/VCF_batches", pattern: "${params.name}_*", mode: "copy"
+  publishDir "${params.OutDir}", pattern: "${params.name}_*", mode: "copy"
   script:
   """
   for chromosome in chr{1..22} chrX ; do 
@@ -58,7 +108,7 @@ workflow {
      VCF = Channel.fromPath(params.vcf)
      REF = Channel.fromPath(params.ref).map(f -> [f, file("${f}.tbi")])
 
-     S1 = S1_Testing(VCF,REF)
+     S1 = testing(VCF,REF)
      S1.batchs.flatten().combine(S1.vcf).view()
-     S2_Chromosome_split(S1.batchs.flatten().combine(S1.vcf))
+     chromosome_split(S1.batchs.flatten().combine(S1.vcf))
 }
