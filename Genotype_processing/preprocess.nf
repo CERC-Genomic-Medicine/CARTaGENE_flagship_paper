@@ -10,15 +10,14 @@ nextflow.enable.dsl = 2
 
 // Pre-requisites/assumptions:
 // 1. Script was designed for genotyping arrays.
-// 2. Inputs are in plink bed files
-// 3. Make sure that plink is installed/loaded on your system
+// 2. Make sure that plink is installed/loaded on your system
 
 // How to execute:
 // nextflow run liftover.nf --beds_initial "/home/user/data/*.bed" --Consent "/path/to/consent.txt" --genome "/home/user/reference/GRCh38.fa" --chain "/home/user/reference/hg19ToHg38.over.chain.gz --OutDir /home/user/out"
 
 params.beds_initial = "/path/to/data/*.bed" // Absolute path to genotyping array in plink bed file (with bim and fam files in the same folder)
 params.Consent = '/path/to/file.txt'        // Absolute path to individual having withdrawn their conscent ( format : FID IID ; with header #FID IID )
-params.chain = '/path/to/chain.gz'          // Absolute path to liftover chain file availlable at http://hgdownload.cse.ucsc.edu/goldenpath/hg38/liftOver/
+params.chain = '/path/to/chain.gz'          // Absolute path to liftover chain file availlable
 params.genome = '/path/to/data/*.fa'        // Absolute path to the genome of interest in fasta format
 params.OutDir = 'path/to/Dir/'              // Absolute path to the output directory
 

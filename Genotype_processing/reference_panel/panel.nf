@@ -33,7 +33,6 @@ window=1000               // LD Pruning Projection Reference
 max_allelefreq=0.95       // Reference File filtering
 min_allelefreq=0.05       // Reference File filtering
 MISSING_CUTOFF=0.001      // Reference File filtering
-King_cutOff="0.0442"      // Relatedness Threshold to determine unrelated individuals for LRT
 
 
 

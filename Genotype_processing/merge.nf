@@ -10,9 +10,10 @@ nextflow.enable.dsl = 2
 
 // Pre-requisites/assumptions:
 // 1. Script was designed for genotyping arrays.
-// 2. Overapping samples (by names) will be eliminated from the array with the least coverage.
-// 2. Script assumes the same reference build
-// 3. Make sure that plink is installed/loaded on your system
+// 2. Overapping samples (by IDs) will be eliminated from the array with the least variants genotyped.
+// 3. Script assumes the IIDs are meant to be unique
+// 4. Script assumes the same reference build
+// 5. Make sure that plink is installed/loaded on your system
 
 // How to execute:
 // nextflow run merge.nf --beds "/home/user/data/*.bed" --OutDir "/home/user/out"
