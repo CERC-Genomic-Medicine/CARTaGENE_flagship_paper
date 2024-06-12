@@ -30,7 +30,7 @@ This pipeline uses :
 
 ### Step 2. Merge
 
-The 'merge.nf' pipeline deduplicates individuals with the same IID and performs the merger of all arrays plink files. To deduplicate, individuals were removed for the array with the smallest number of variants genotyped. To merge all files, only variants present in all arrays were kept. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
+The 'merge.nf' pipeline deduplicates individuals with the same IID and performs the merger of all arrays plink files. To deduplicate, individuals with shared IID were removed for the array with the smallest number of variants genotyped. To merge all files, only variants present in all arrays were kept. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
 1) Removes duplicate individuals from arrays (with the smallest number of variants genotyped) until there is no shared individual IIDs
 2) Establishes a list of shared variants between all arrays and keep only those shared variants for each array.
