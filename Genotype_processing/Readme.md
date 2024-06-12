@@ -14,7 +14,7 @@ PLINK v2.00a3LM 64-bit Intel is used to establish KING kinship coefficient for k
 ```
 
 ### Step 1. Array file pre-process
-The 'preprocess.nf' pipeline removes individuals with consent withdrawn, performs LiftOver from b37 to b38 and aligns to the reference. The pipeline is self-explanatory and includes the following steps:
+The 'preprocess.nf' pipeline removes individuals with consent withdrawn, performs LiftOver from b37 to b38 and aligns to the reference. The pipeline includes the following steps:
 
 1) Remove samples from individuals with withdrawn consent.
 2) LiftOver variant positions from b37 to b38.
