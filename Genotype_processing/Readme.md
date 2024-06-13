@@ -47,7 +47,7 @@ The 'harmonization.nf' pipeline removes positions that display a batch effect ba
 1. Perform parallelized PCA projection onto a reference. This step is divided into two parts: first, an instance is run to obtain a reference PCA, so the second part, the other parallel instances, do not recompute it. This step was performed using a reference panel made from [gnomAD's HGDP + 1KG callset](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg) (N=4,119).
 2. Establish a list of unrelated individuals using PLINK2's king-cutoff.
 3. Perform a likelihood ratio test on each variant (parallelized by chromosome).
-4. Filter out the genotype files for variants with p-values below or equal to the chosen threshold (i.e. ≤ 0.05 / number of tests).
+4. Filter out the genotype files for variants with p-values below or equal to the chosen threshold (i.e., ≤ 0.05 / number of tests).
 5. Format the output file: convert PLINK files to VCF, annotate the VCF, set the representation of male genotypes in the non-PAR to haploid.
 6. Create an index for the VCF.
 
