@@ -30,7 +30,7 @@ This pipeline uses :
 
 ### Step 2. Merge
 
-The 'merge.nf' pipeline deduplicates individuals with the same IID and performs the merger of all arrays plink files. To deduplicate, individuals with shared IID were removed for the array with the smallest number of variants genotyped. To merge all files, only variants present in all arrays were kept. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
+The 'merge.nf' pipeline deduplicates individuals with the same IID (i.e. the plink file's within-family IDs) as in this dataset this value is meant to be unique and performs the merger of all arrays plink files. To deduplicate, individuals with shared IID were removed from the array with the smallest number of variants genotyped at the beginning of this step. To merge all files, only variants present in all arrays were retained. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
 1) Removes duplicate individuals from arrays (with the smallest number of variants genotyped) until there is no shared individual IIDs
 2) Establishes a list of shared variants between all arrays and keep only those shared variants for each array.
@@ -44,9 +44,9 @@ This pipeline uses :
 
 The 'harmonization.nf' pipeline removes position which display a batch effect based on array. To assess the batch effect two models are evaluated using likelihood ratio test (LRT), one with only the 4 first projected principal components (representing genetic ancestry) and one with both the projected principal components and the arrays as explanatory variables. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
-1) PCA projection onto a reference parallelized. This step is divided in two, one instance is run first to obtain a reference PCA, as to not recompute it. This step was performed using a reference panel of made from [gnomAD's HGDP + 1KG callset](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg) (N=4,119).
+1) Parallelized PCA projection onto a reference. This step is divided into two parts: first, an instance is run to obtain a reference PCA, so it doesn't need to be recomputed. This step was performed using a reference panel made from from [gnomAD's HGDP + 1KG callset](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg) (N=4,119).
 2) Establish list of unrelated individuals using plink2's king-cutoff.
-3) Likelihood ratio test each variant (parallelized by chromosome). 
+3) Likelihood ratio test each variant (parallelized by chromosome).
 4) Filtering the genotypes files for variants with p-value below the chosen threshold (0.05 / number of tests)
 5) Formatting output file, this step converts from plink files to vcf, annotates the vcf, set the representation of males genotypes in the non-PAR to haploid.
 6) Creates an index for the vcf.
@@ -61,9 +61,9 @@ This pipeline uses :
 
 ### Step 4. TOPMed imputation preparation 
 
-The 'topmed_prep.nf' pipeline removes position with more than 0.2 differences in allele frequency between TOPMed and our data (due to poor imputation capacity for those allele), the pipeline also split the data in two random overlapping batches of 25k individuals to satisfy the current limit of TOPMed. The pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters.  The pipeline is self-explanatory and includes the following steps:
+The 'topmed_prep.nf' pipeline removes positions with more than 20% difference in allele frequency between TOPMed and our data. The pipeline also split the data in two random overlapping batches of 25k individuals to satisfy the current limit of TOPMed. The pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters.  The pipeline is self-explanatory and includes the following steps:
 
-1) Test the difference in allele frequency between (bravo Freeze 8)[https://topmed.nhlbi.nih.gov/topmed-whole-genome-sequencing-methods-freeze-8] and CaG genotypes.
+1) Test the difference in allele frequency between (bravo Freeze 8)[https://topmed.nhlbi.nih.gov/topmed-whole-genome-sequencing-methods-freeze-8] and CaG data.
 2) Remove variants with greater differences in allele frequency than the threshold.
 3) Create two overlapping lists of 25,000 individuals each, representing the entire cohort. Randomize the order of individuals and then divide them into two lists: the first 25,000 individuals and the last 25,000 individuals, ensuring an overlap between the lists. This procedure is done to satisfy TOPMed's current limits.
 5) Create two sets of vcf files based on these lists.
