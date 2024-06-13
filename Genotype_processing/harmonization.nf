@@ -34,6 +34,13 @@ params.threshold="0.05"          // Pvalue threshold in LRT
 params.King_cutOff="0.0442"      // Relatedness Threshold to determine unrelated individuals for LRT
 
 
+//Constant
+  params.PAR1='chrX:10001-2781479'       # PAR1 hg38
+  params.PAR2='chrX:155701383-156030895' # PAR2 hg38
+  params.nPAR='chrX:2781479-155701383'   # non-par hg38
+  params.nPAR_ploidy1='chrX 2781479 155701383 M 1' ## Ploidy reformating to haploid
+  params.nPAR_ploidy2='chrX 1 10000 M 1'           ## Ploidy reformating to haploid
+
 // 1) Create Reference for PCA projection 2) First batch of PCA projection (to create and reuse REF PCA) 
 process first_pca_projection {
   label 'first_pca_projection'
@@ -195,15 +202,12 @@ process pca_test {
 
   ## Regions to be tested on X chromosome (male female separated)
 
-  PAR1='chrX:10001-2781479'       # PAR1 hg38
-  PAR2='chrX:155701383-156030895' # PAR2 hg38
-  nPAR='chrX:2781479-155701383'   # non-par hg38
 
   if [ "${chrom}" -eq 23 ]; then
-  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated -r \${PAR1} -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_PAR1
-  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated -r \${PAR2} -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_PAR2
-  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated_male -r \${nPAR}  -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_Xmale
-  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated_female -r \${nPAR}  -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_Xfemale
+  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated -r \${params.PAR1} -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_PAR1
+  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated -r \${params.PAR2} -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_PAR2
+  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated_male -r \${params.nPAR}  -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_Xmale
+  compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated_female -r \${params.nPAR}  -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_Xfemale
   else
   compare_ancestry_adjusted_af.py -v ${vcf} -l label_unrelated -r chr${chrom} -p  cohort.PCA -k ${params.K} -o AF_ftest_${params.K}PC_chr${chrom}
   fi
@@ -249,8 +253,8 @@ process filtering {
   sed 1d AF_ftest_${params.K}PC_\${i} >> AF_ftest_${params.K}PC
   done
 
-  echo 'chrX 2781479 155701383 M 1' > ploidy.txt ## Male haploid for non PAR
-  
+  echo ${params.nPAR_ploidy1} > ploidy.txt ## Male haploid for non PAR
+  echo ${params.nPAR_ploidy2} >> ploidy.txt 
   cut -f 1,5 ${fam} | sed 's/2\$/F/g' | sed 's/1\$/M/g'  > samples_sex.txt 
 
   filtering.py -i AF_ftest_${params.K}PC -p ${params.threshold}
