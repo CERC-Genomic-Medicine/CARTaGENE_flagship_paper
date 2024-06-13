@@ -1,90 +1,94 @@
-
-# Genotype processing 
+# Genotype Processing 
 
 ## About
 
-This folder contains the nextflow pipeline used to LiftOver, Merge and harmonize the CARTaGENE data (N=29,333 merged final version). This folder was conceived to documents the preparation of CARTaGENE (CaG) data for imputation. 
+This folder contains the Nextflow pipeline used to LiftOver, merge, and harmonize the CARTaGENE data (N=29,333 merged final version). This folder documents the preparation of CARTaGENE (CaG) data for imputation.
 
-## Workflow order
+## Workflow Order
 
 ```diff
 - Important!
-This pipeline uses plink version 1 and version 2, the two are called using plink and plink2 respectively. Importantly, they are not interchangeable.
-PLINK v2.00a3LM 64-bit Intel is used to establish KING kinship coefficient for kinship cutoff in the 'harmonization.nf' pipeline. Otherwise plink v1.90b6.21 64-bit is used. 
+These pipelines use PLINK version 1 and version 2. The two are called using the 'plink' and 'plink2' commands respectively. Importantly, they are not interchangeable.
+PLINK v2.00a3LM 64-bit Intel is used to establish the KING kinship coefficient for kinship cutoff in the 'harmonization.nf' pipeline. Otherwise, PLINK v1.90b6.21 64-bit is used.
 ```
 
-### Step 1. Array data preprocessing
-The 'preprocess.nf' pipeline removes individuals with consent withdrawn, performs LiftOver from b37 to b38 and aligns to the reference. This pipeline was run on the Digital Research Alliance of Canada high performance compute clusters. The pipeline includes the following steps:
+### Step 1. Array Data Preprocessing
 
-1) Remove samples from individuals with withdrawn consent.
-2) LiftOver variant positions from b37 to b38.
-3) Aligns variants records to the b38 genome. In this step, the allele A1/A2 encoding is updated from Major/Minor to Reference/Alternate and removing palindromic variants, records that did not contain the reference allele and variants that are not SNPs are removed.
-4) Deduplicate variant by removing the variant copy with the highest missingness rate.
-4) Set haploid heterozygote (i.e. male genotype in chromosome X non-PAR) to missing.
+The 'preprocess.nf' pipeline removes individuals with withdrawn consent, performs LiftOver from b37 to b38, and aligns to the reference. This pipeline was run on the Digital Research Alliance of Canada high-performance compute clusters. The pipeline includes the following steps:
 
-This pipeline uses :
+1. Remove samples from individuals with withdrawn consent.
+2. LiftOver variant positions from b37 to b38.
+3. Align variant records to the b38 genome. In this step, the allele A1/A2 encoding is updated from Major/Minor to Reference/Alternate. Palindromic variants, records that did not contain the reference allele, and variants that are not SNPs are removed.
+4. Deduplicate variants by removing the variant copy with the highest missingness rate.
+5. Set haploid heterozygote (i.e., heterozygous male genotypes in chromosome X non-PAR) to missing.
 
-- Python version 3.11 (with packages in Requierement.txt and bin folder)
+This pipeline uses:
+
+- Python version 3.11 (with packages in requirements.txt and scripts in the bin folder)
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) **Assumed in Path**
 - [LiftOver](https://genome-store.ucsc.edu/) **Assumed in Path**
 
 ### Step 2. Merge
 
-The 'merge.nf' pipeline deduplicates individuals with the same IID (i.e. the plink file's within-family IDs) as in this dataset this value is meant to be unique and performs the merger of all arrays plink files. To deduplicate, individuals with shared IID were removed from the array with the smallest number of variants genotyped at the beginning of this step. To merge all files, only variants present in all arrays were retained. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
+The 'merge.nf' pipeline deduplicates individuals with the same IID (i.e., the PLINK file's within-family IDs), as in this dataset, this value is meant to be unique to each sample and performs the merger of all arrays' PLINK files. To deduplicate, individuals with shared IID were removed from the array with the smallest number of variants genotyped at the beginning of this step. To merge all files, only variants present in all arrays were retained. This pipeline was run using the SLURM job scheduler on the Digital Research Alliance of Canada high-performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
-1) Removes duplicate individuals from arrays (with the smallest number of variants genotyped) until there is no shared individual IIDs
-2) Establishes a list of shared variants between all arrays and keep only those shared variants for each array.
-3) Merges all array on keeping only shared variants
+1. Remove duplicate individuals from arrays (with the smallest number of variants genotyped) until there are no shared individual IIDs.
+2. Establish a list of shared variants between all arrays and keep only those shared variants for each array.
+3. Merge all arrays, keeping only shared variants.
 
-This pipeline uses :
+This pipeline uses:
 
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) **Assumed in Path**
 
 ### Step 3. Harmonization
 
-The 'harmonization.nf' pipeline removes position which display a batch effect based on array. To assess the batch effect two models are evaluated using likelihood ratio test (LRT), one with only the 4 first projected principal components (representing genetic ancestry) and one with both the projected principal components and the arrays as explanatory variables. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
+The 'harmonization.nf' pipeline removes positions that display a batch effect based on the array. To assess the batch effect, two models are evaluated using the likelihood ratio test (LRT): one with only the first four projected principal components (representing genetic ancestry) and one with both the projected principal components and the arrays as explanatory variables. This pipeline was run using the SLURM job scheduler on the Digital Research Alliance of Canada high-performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
-1) Parallelized PCA projection onto a reference. This step is divided into two parts: first, an instance is run to obtain a reference PCA, so it doesn't need to be recomputed. This step was performed using a reference panel made from from [gnomAD's HGDP + 1KG callset](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg) (N=4,119).
-2) Establish list of unrelated individuals using plink2's king-cutoff.
-3) Likelihood ratio test each variant (parallelized by chromosome).
-4) Filtering the genotypes files for variants with p-value below the chosen threshold (0.05 / number of tests)
-5) Formatting output file, this step converts from plink files to vcf, annotates the vcf, set the representation of males genotypes in the non-PAR to haploid.
-6) Creates an index for the vcf.
+1. Perform parallelized PCA projection onto a reference. This step is divided into two parts: first, an instance is run to obtain a reference PCA, so the second part, the other parallel instances, do not recompute it. This step was performed using a reference panel made from [gnomAD's HGDP + 1KG callset](https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg) (N=4,119).
+2. Establish a list of unrelated individuals using PLINK2's king-cutoff.
+3. Perform a likelihood ratio test on each variant (parallelized by chromosome).
+4. Filter out the genotype files for variants with p-values below or equal to the chosen threshold (i.e. ≤ 0.05 / number of tests).
+5. Format the output file: convert PLINK files to VCF, annotate the VCF, set the representation of male genotypes in the non-PAR to haploid.
+6. Create an index for the VCF.
 
-This pipeline uses :
-- Python version 3.11 (with packages in Requierement.txt and bin folder)
+This pipeline uses:
+
+- Python version 3.11 (with packages in requirements.txt and scripts in the bin folder)
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) **Assumed in Path**
-- [PLINK v2.00a3LM 64-bit Intel ](https://www.cog-genomics.org/plink/2.0/) (22 Mar 2022) **Assumed in Path** 
+- [PLINK v2.00a3LM 64-bit Intel](https://www.cog-genomics.org/plink/2.0/) (22 Mar 2022) **Assumed in Path**
 - [Laser v.1.03](https://csg.sph.umich.edu/chaolong/LASER/) (LASER's vcf2geno and trace are used)
 - [bcftools/1.19](https://github.com/samtools/bcftools/releases/download/1.19/bcftools-1.19.tar.bz2) **Assumed in Path**
-   - with 'fill-tags' and 'fixploidy' plugins
+  - with 'fill-tags' and 'fixploidy' plugins
 
-### Step 4. TOPMed imputation preparation 
+### Step 4. TOPMed Imputation Preparation
 
-The 'topmed_prep.nf' pipeline removes positions with more than 20% difference in allele frequency between TOPMed and our data. The pipeline also split the data in two random overlapping batches of 25k individuals to satisfy the current limit of TOPMed. The pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters.  The pipeline is self-explanatory and includes the following steps:
+The 'topmed_prep.nf' pipeline removes positions with ≥ 20% difference in allele frequency between TOPMed and this dataset. The pipeline also splits the data into two random overlapping batches of 25,000 individuals to satisfy the current limit of TOPMed. The pipeline was run using the SLURM job scheduler on the Digital Research Alliance of Canada high-performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
-1) Test the difference in allele frequency between (bravo Freeze 8)[https://topmed.nhlbi.nih.gov/topmed-whole-genome-sequencing-methods-freeze-8] and CaG data.
-2) Remove variants with greater differences in allele frequency than the threshold.
-3) Create two overlapping lists of 25,000 individuals each, representing the entire cohort. Randomize the order of individuals and then divide them into two lists: the first 25,000 individuals and the last 25,000 individuals, ensuring an overlap between the lists. This procedure is done to satisfy TOPMed's current limits.
-5) Create two sets of vcf files based on these lists.
+1. Test the difference in allele frequency between [Bravo Freeze 8](https://topmed.nhlbi.nih.gov/topmed-whole-genome-sequencing-methods-freeze-8) and CaG data.
+2. Remove variants with greater or equal differences in allele frequency than the threshold.
+3. Create two overlapping lists of 25,000 individuals each, representing the entire cohort. Randomize the order of individuals and then divide them into two lists: the first 25,000 individuals and the last 25,000 individuals, ensuring an overlap between the lists. This procedure is done to satisfy TOPMed's current limits.
+4. Create two sets of VCF files based on these lists.
 
-This pipeline uses :
+This pipeline uses:
 
-- Python version 3.11 (with packages in Requierement.txt and bin folder)
+- Python version 3.11 (with packages in requirements.txt and scripts in the bin folder)
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) **Assumed in Path**
 - [bcftools/1.19](https://github.com/samtools/bcftools/releases/download/1.19/bcftools-1.19.tar.bz2) **Assumed in Path**
 
 ## Additional
 
-Additionally, we provided script used for the creation of a reference panel in the desired format.
+Additionally, we provided the pipeline used for the creation of a reference panel in the desired format.
 
-### Panel creation
-The 'reference_panel/panel.nf' pipeline creates a reference panel with a maximal number of shared positions between the target data and the references, while using standard data curation. This pipeline was run using SLURM job scheduler on the Digital Research Alliance of Canada high performance compute clusters. The pipeline is self-explanatory and includes the following steps:
+### Panel Creation
 
-1. Variant Filtering. Variants are filtered based on shared variant positions with the target dataset. Quality filters are applied, and variants are selected based on their allele frequency.
-2. File Concatenation, LD-Pruning and Conversion. The variant files are concatenated, linkage disequilibrium (LD) pruned, and converted to geno/site format.
+The 'reference_panel/panel.nf' pipeline creates a reference panel with a maximized number of shared positions between the target data and the references, while using standard data curation. This pipeline was run using the SLURM job scheduler on the Digital Research Alliance of Canada high-performance compute clusters. The pipeline is self-explanatory and includes the following steps:
 
-This pipeline uses :
+1. Filter variants. Variants are filtered based on shared variant positions with the target dataset. Quality filters are applied, and variants are selected based on their allele frequency.
+2. File concatenation. The filtered VCFs are concatenated.
+3. Preform LD-Pruning. The VCF is linkage disequilibrium (LD) pruned.
+4. Perform VCF -> GENO file conversion. The VCF is converted to GENO/SITE files format using vcf2geno.
+
+This pipeline uses:
 
 - [PLINK v1.90b6.21 64-bit](https://www.cog-genomics.org/plink/) (19 Oct 2020) **Assumed in Path**
-- [Laser v.1.03](https://csg.sph.umich.edu/chaolong/LASER/) (LASER's vcf2geno is used for vcf conversion to .geno/.site file format)
+- [Laser v.1.03](https://csg.sph.umich.edu/chaolong/LASER/) (LASER's vcf2geno is used for VCF conversion to .geno/.site file format)
