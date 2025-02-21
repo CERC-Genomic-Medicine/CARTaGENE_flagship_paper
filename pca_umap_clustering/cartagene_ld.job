@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --job-name=cartagene_ld
+#SBATCH --account=
+#SBATCH -n 16
+#SBATCH -N 1
+#SBATCH --mem=32G
+#SBATCH --time 1:00:00
+#SBATCH --error=cartagene/jobs/logs/%x-%j.out
+#SBATCH --out=cartagene/jobs/logs/%x-%j.err
+
+MASK_FILE=cartagene/data/hla_range.txt
+OUT_DIR=cartagene/data/ld_thinned_2step
+
+# module load plink/1.9b_6.21-x86_64
+
+# Use PLINK2 for LD thinning
+module load plink/2.00-10252019-avx2
+
+plink2 \
+--bfile gsa_merged_hg38_clean \
+--indep-pairwise 1000 50 0.1 \
+--threads 16 \
+--out ${OUT_DIR}
