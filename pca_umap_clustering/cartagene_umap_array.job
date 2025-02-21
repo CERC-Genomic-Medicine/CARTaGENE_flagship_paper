@@ -1,0 +1,52 @@
+#!/bin/bash
+#SBATCH --job-name=cartagene_umap
+#SBATCH --account=
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --array=0-2
+#SBATCH --mem=16G
+#SBATCH --time 06:00:00
+#SBATCH --error=cartagene/logs/%x-%j.out
+#SBATCH --out=cartagene/logs/%x-%j.err
+
+# module load python/3.7.9
+# module load scipy-stack
+
+# For array jobs we can't overwrite environments.
+ENVDIR=cartagene/env
+
+source ${ENVDIR}/bin/activate
+
+PC_ARRAY=(5 10 25 50)
+NN_ARRAY=(10 15 25)
+MD_ARRAY=(0 0.001)
+NC_ARRAY=(3 4 5)
+
+D_SET=cartagene/data/hla_removed_ld_thinned.eigenvec
+OUT_DIR=cartagene/projections/hla_removed_ld_thinned_0.1
+LOG_DIR=cartagene/logs
+
+# Specify whether the source file has headers
+HEADER=F
+
+for pc in "${PC_ARRAY[@]}"
+        do
+        for nn in "${NN_ARRAY[@]}"
+                do
+                for md in "${MD_ARRAY[@]}"
+                        do
+                                python cartagene/code/clustering/general_umap_script.py \
+                                        -dset $D_SET \
+                                        -pc $pc \
+                                        -nn $nn \
+                                        -md $md \
+                                        -nc ${NC_ARRAY[$SLURM_ARRAY_TASK_ID]} \
+                                        -outdir $OUT_DIR \
+                                        -head $HEADER \
+                                        -log $LOG_DIR
+
+                        done
+                done
+	done
+
+deactivate
