@@ -9,3 +9,7 @@ This repository provides tools and scripts to perform ARG-based imputation and r
 2. To perform ARG-imputation from an ARG in tskit format and a vcf file, please use: https://github.com/almejiaga/ARG-imputation
 
 3. To infer carrier frequencies from a set of carriers using ISGen, refer to this fork repository: https://github.com/almejiaga/ISGen
+
+## Downstream analaysis
+
+- Plotting the regional frequency estimates as a Quebec Heatmap: Quebec_map.py
