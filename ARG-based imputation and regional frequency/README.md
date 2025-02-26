@@ -1,4 +1,4 @@
-## ARG-baed imputation and regional frequency
+## ARG-based imputation and regional frequency
 
 This repository provides tools and scripts to perform ARG-based imputation and regional frequency estimation with genealogical record. It is built upon the work available in three differente repositories
 
