@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH --job-name=cartagene_pca
+#SBATCH --account=
+#SBATCH -n 16
+#SBATCH -N 1
+#SBATCH --mem=32G
+#SBATCH --time 06:00:00
+#SBATCH --error=cartagene/jobs/logs/%x-%j.out
+#SBATCH --out=cartagene/jobs/logs/%x-%j.err
+
+# This job is to use flashPCA to get the variation across all the PCs
+# First we need to create the thinned bfile, then we can feed it into flashPCA in R
+
+MASK_FILE=cartagene/data/hla_range.txt
+OUT_DIR=cartagene/data/hla_removed_ld_thinned
+PRUNE_IN=cartagene/data/ld_thinned_2step.prune.in
+
+BFILE_DIR=quality_control_2022-03-01
+BFILE_NAME=gsa_merged_hg38_clean
+
+module load plink/1.9b_6.21-x86_64
+
+# Use PLINK2 for LD thinning
+# module load plink/2.00-10252019-avx2
+
+plink \
+--bfile ${BFILE_DIR}/${BFILE_NAME} \
+--maf 0.05 \
+--mind 0.1 \
+--geno 0.1 \
+--hwe 1e-6 \
+--threads 16 \
+--extract ${PRUNE_IN} \
+--exclude range ${MASK_FILE} \
+--make-bed \
+--out ${OUT_DIR}
