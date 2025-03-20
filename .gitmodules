@@ -1,0 +1,3 @@
+[submodule "Admixture/Admixture-pipeline"]
+	path = Admixture/Admixture-pipeline
+	url = https://github.com/georgette-femerling/Admixture-pipeline.git
