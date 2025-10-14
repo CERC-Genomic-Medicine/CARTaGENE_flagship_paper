@@ -1,4 +1,4 @@
-# HLA analysis in CartaGene
+# HLA analysis in CARTaGENE
 
 1. HLA region extraction using `hla_extract.nf` pipeline at [github.com/pmccl027/hla_analysis/tree/main/extract_hla_region](https://github.com/pmccl027/hla_analysis/tree/main/extract_hla_region)
 2. HLA allele calling via [HLA*LA](https://pubmed.ncbi.nlm.nih.gov/30942877) with `hla_la.nf` at [github.com/pmccl027/hla_analysis/tree/main/hla_calling](https://github.com/pmccl027/hla_analysis/tree/main/hla_calling)
