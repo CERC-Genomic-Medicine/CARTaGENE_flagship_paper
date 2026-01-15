@@ -1,4 +1,5 @@
 # CARTaGENE flagship paper
+[![DOI](https://zenodo.org/badge/715182852.svg)](https://doi.org/10.5281/zenodo.18261473)
 
 This repository includes the source code required to process data and create tables and figures featured in the flagship paper of the CARTaGENE study in Quebec, Canada.
 
